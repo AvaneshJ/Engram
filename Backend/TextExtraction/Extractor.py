@@ -47,10 +47,12 @@ def extract(api, text, prev):
                                                 "Extraversion": { "Description": "..." },
                                                 "Agreeableness": { "Description": "..." },
                                                 "Neuroticism": { "Description": "..." },
-                                                "Relations": { "Description": "..." }
+                                                "Relations": { "Description": "..." },
+                                                "Other": { "Description": "..." }
                                                 }
                                                 The "Description" should provide a brief explanation based on the given text and should include important details related to person based on the OCEAN trait method.
-                                                Do not include scores, extra commentary, or anything outside the JSON structure. """},
+                                                Do not include scores, extra commentary, or anything outside the JSON structure. 
+                                                also store important dates, time, or memories that the user made that do not get cateriozed into the above mentioned in the other one"""},
                 {"role": "user", "content": text}
             ],
             temperature=0.7

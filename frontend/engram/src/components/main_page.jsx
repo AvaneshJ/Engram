@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import "./main_page.css";
 
-// Pixel class remains the same
 class Pixel {
     constructor(canvas, context, x, y, color, speed, delay) {
         this.width = canvas.width;
@@ -30,7 +29,6 @@ class Pixel {
 
     draw() {
         const centerOffset = this.maxSizeInteger * 0.5 - this.size * 0.5;
-
         this.ctx.fillStyle = this.color;
         this.ctx.fillRect(
             this.x + centerOffset,
@@ -42,36 +40,30 @@ class Pixel {
 
     appear() {
         this.isIdle = false;
-
         if (this.counter <= this.delay) {
             this.counter += this.counterStep;
             return;
         }
-
         if (this.size >= this.maxSize) {
             this.isShimmer = true;
         }
-
         if (this.isShimmer) {
             this.shimmer();
         } else {
             this.size += this.sizeStep;
         }
-
         this.draw();
     }
 
     disappear() {
         this.isShimmer = false;
         this.counter = 0;
-
         if (this.size <= 0) {
             this.isIdle = true;
             return;
         } else {
             this.size -= 0.1;
         }
-
         this.draw();
     }
 
@@ -81,7 +73,6 @@ class Pixel {
         } else if (this.size <= this.minSize) {
             this.isReverse = false;
         }
-
         if (this.isReverse) {
             this.size -= this.speed;
         } else {
@@ -90,33 +81,23 @@ class Pixel {
     }
 }
 
-// Updated PixelCanvasDOM component
 const PixelCanvasDOM = ({ gap, speed, colors, noFocus }) => {
     const containerRef = useRef(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
-
-        // Create our custom element
         const pixelCanvas = document.createElement('pixel-canvas');
-
-        // Set attributes
         if (gap) pixelCanvas.dataset.gap = gap;
         if (speed) pixelCanvas.dataset.speed = speed;
         if (colors) pixelCanvas.dataset.colors = colors;
         if (noFocus) pixelCanvas.dataset.noFocus = '';
-
-        // Clear container and append our element
         containerRef.current.innerHTML = '';
         containerRef.current.appendChild(pixelCanvas);
-
-        // No need to clean up, React will remove the container element
     }, [gap, speed, colors, noFocus]);
 
-    return <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0 }}></div>;
+    return <div ref={containerRef} style={{ width: '100%', height: '300%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}></div>;
 };
 
-// Fixed Web Component definition
 if (typeof window !== 'undefined') {
     if (!customElements.get('pixel-canvas')) {
         class PixelCanvasElement extends HTMLElement {
@@ -131,7 +112,6 @@ if (typeof window !== 'undefined') {
 
             constructor() {
                 super();
-                // Create shadow DOM properly in the constructor
                 this.attachShadow({ mode: "open" });
             }
 
@@ -143,7 +123,6 @@ if (typeof window !== 'undefined') {
                 const value = this.dataset.gap || 5;
                 const min = 4;
                 const max = 50;
-
                 if (Number(value) <= min) {
                     return min;
                 } else if (Number(value) >= max) {
@@ -158,7 +137,6 @@ if (typeof window !== 'undefined') {
                 const min = 0;
                 const max = 100;
                 const throttle = 0.001;
-
                 if (Number(value) <= min || this.reducedMotion) {
                     return min;
                 } else if (Number(value) >= max) {
@@ -173,68 +151,47 @@ if (typeof window !== 'undefined') {
             }
 
             connectedCallback() {
-                // Create canvas
                 const canvas = document.createElement("canvas");
                 const sheet = new CSSStyleSheet();
-
-                // Store parent for event handling
                 this._parent = this.parentNode;
-
-                // Setup styles
                 sheet.replaceSync(PixelCanvasElement.css);
                 this.shadowRoot.adoptedStyleSheets = [sheet];
-
-                // Add canvas to shadow DOM
                 this.shadowRoot.append(canvas);
                 this.canvas = this.shadowRoot.querySelector("canvas");
                 this.ctx = this.canvas.getContext("2d");
-
-                // Animation setup
                 this.timeInterval = 1000 / 60;
                 this.timePrevious = performance.now();
                 this.reducedMotion = window.matchMedia(
                     "(prefers-reduced-motion: reduce)"
                 ).matches;
-
-                // Initialize canvas and add observers/listeners
                 setTimeout(() => this.init(), 10);
-
                 this.resizeObserver = new ResizeObserver(() => {
                     this.init();
-                    // Trigger animation on resize
                     this.handleAnimation("appear");
                 });
                 this.resizeObserver.observe(this);
-
-                // Add event listeners to parent for hover effects
                 if (this._parent) {
                     this._parent.addEventListener("mouseenter", this);
                     this._parent.addEventListener("mouseleave", this);
-
                     if (!this.noFocus) {
                         this._parent.addEventListener("focusin", this);
                         this._parent.addEventListener("focusout", this);
                     }
-
                     setTimeout(() => this.handleAnimation("disappear"), 10);
                 }
             }
 
             disconnectedCallback() {
                 if (this.resizeObserver) this.resizeObserver.disconnect();
-
                 if (this._parent) {
                     this._parent.removeEventListener("mouseenter", this);
                     this._parent.removeEventListener("mouseleave", this);
-
                     if (!this.noFocus) {
                         this._parent.removeEventListener("focusin", this);
                         this._parent.removeEventListener("focusout", this);
                     }
                 }
-
                 if (this.animation) cancelAnimationFrame(this.animation);
-
                 delete this._parent;
             }
 
@@ -246,21 +203,21 @@ if (typeof window !== 'undefined') {
             }
 
             onmouseenter() {
-                this.handleAnimation("disappear");
+                this.handleAnimation("appear");
             }
 
             onmouseleave() {
-                this.handleAnimation("appear");
+                this.handleAnimation("disappear");
             }
 
             onfocusin(e) {
                 if (e.currentTarget.contains(e.relatedTarget)) return;
-                this.handleAnimation("disappear");
+                this.handleAnimation("appear");
             }
 
             onfocusout(e) {
                 if (e.currentTarget.contains(e.relatedTarget)) return;
-                this.handleAnimation("appear");
+                this.handleAnimation("disappear");
             }
 
             handleAnimation(name) {
@@ -272,7 +229,6 @@ if (typeof window !== 'undefined') {
                 const rect = this.getBoundingClientRect();
                 const width = Math.floor(rect.width) || 300;
                 const height = Math.floor(rect.height) || 400;
-
                 this.pixels = [];
                 this.canvas.width = width;
                 this.canvas.height = height;
@@ -285,13 +241,11 @@ if (typeof window !== 'undefined') {
                 const dx = x - this.canvas.width / 2;
                 const dy = y - this.canvas.height / 2;
                 const distance = Math.sqrt(dx * dx + dy * dy);
-
                 return distance;
             }
 
             createPixels() {
                 const actualGap = this.gap;
-
                 for (let x = 0; x < this.canvas.width; x += actualGap) {
                     for (let y = 0; y < this.canvas.height; y += actualGap) {
                         const color = this.colors[
@@ -300,7 +254,6 @@ if (typeof window !== 'undefined') {
                         const delay = this.reducedMotion
                             ? 0
                             : this.getDistanceToCanvasCenter(x, y);
-
                         this.pixels.push(
                             new Pixel(this.canvas, this.ctx, x, y, color, this.speed, delay)
                         );
@@ -310,21 +263,15 @@ if (typeof window !== 'undefined') {
 
             animate(fnName) {
                 this.animation = requestAnimationFrame(() => this.animate(fnName));
-
                 const timeNow = performance.now();
                 const timePassed = timeNow - this.timePrevious;
-
                 if (timePassed < this.timeInterval) return;
-
                 this.timePrevious = timeNow - (timePassed % this.timeInterval);
-
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
                 if (!this.pixels || this.pixels.length === 0) {
                     this.createPixels();
                     return;
                 }
-
                 let allIdle = true;
                 for (let i = 0; i < this.pixels.length; i++) {
                     this.pixels[i][fnName]();
@@ -332,7 +279,6 @@ if (typeof window !== 'undefined') {
                         allIdle = false;
                     }
                 }
-
                 if (allIdle && fnName === "disappear") {
                     cancelAnimationFrame(this.animation);
                 }
@@ -358,12 +304,12 @@ const PixelCanvas = () => {
                         colors="#fef08a, #fde047, #eab308"
                         noFocus={false}
                     />
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentcolor" viewBox="0 0 256 256" style={{ position: "relative", zIndex: 1 }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentcolor" viewBox="0 0 256 256" style={{ position: "relative", zIndex: 2 }}>
                         <path
                             d="M180,146H158V110h22a34,34,0,1,0-34-34V98H110V76a34,34,0,1,0-34,34H98v36H76a34,34,0,1,0,34,34V158h36v22a34,34,0,1,0,34-34ZM158,76a22,22,0,1,1,22,22H158ZM54,76a22,22,0,0,1,44,0V98H76A22,22,0,0,1,54,76ZM98,180a22,22,0,1,1-22-22H98Zm12-70h36v36H110Zm70,92a22,22,0,0,1-22-22V158h22a22,22,0,0,1,0,44Z">
                         </path>
                     </svg>
-                    <button style={{ position: "relative", zIndex: 1 }}>Replica</button>
+                    <button style={{ position: "relative", zIndex: 2 }}>Replica</button>
                 </div>
             </a>
 
@@ -375,11 +321,11 @@ const PixelCanvas = () => {
                         colors="#ff8080,rgb(255, 15, 15), #ff0000"
                         noFocus={false}
                     />
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentcolor" viewBox="0 0 256 256" style={{ position: "relative", zIndex: 1 }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentcolor" viewBox="0 0 256 256" style={{ position: "relative", zIndex: 2 }}>
                         <path
                             d="M208,24H72A32,32,0,0,0,40,56V224a8,8,0,0,0,8,8H192a8,8,0,0,0,0-16H56a16,16,0,0,1,16-16H208a8,8,0,0,0,8-8V32A8,8,0,0,0,208,24Zm-8,160H72a31.82,31.82,0,0,0-16,4.29V56A16,16,0,0,1,72,40H200Z" />
                     </svg>
-                    <button style={{ position: "relative", zIndex: 1 }}>Diary</button>
+                    <button style={{ position: "relative", zIndex: 2 }}>Diary</button>
                 </div>
             </a>
         </div>

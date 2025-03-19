@@ -1,3 +1,11 @@
+/* Define the custom font using @font-face */
+@font-face {
+    font-family: 'CustomFont';
+    src: url('../Assets/Dune_Rise.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 :root {
     --space: 1rem;
     --bg: #09090b;
@@ -20,6 +28,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    font-family: 'CustomFont', sans-serif;
 }
 
 body {
@@ -29,8 +38,9 @@ body {
 }
 
 .main {
+    background-image: '../Assets/BLACK.jpg';
     display: grid;
-    grid-template-columns: repeat(var(--count, 1), 1fr);
+    grid-template-columns: repeat(var(--count, 3), 1fr);
     gap: var(--space);
     width: min(var(--max, 15rem), 100%);
     margin: auto;
@@ -38,14 +48,14 @@ body {
 
 @media (min-width: 25rem) {
     .main {
-        --count: 2;
+        --count: 1;
         --max: 30rem;
     }
 }
 
 @media (min-width: 45rem) {
     .main {
-        --count: 4;
+        --count: 3;
         --max: 60rem;
     }
 }
@@ -61,6 +71,7 @@ body {
     isolation: isolate;
     transition: border-color 200ms var(--ease-out);
     user-select: none;
+    z-index: 3;
 }
 
 .card::before {
@@ -92,16 +103,21 @@ body {
 
 .card svg {
     position: relative;
-    z-index: 1;
     width: 30%;
     height: auto;
     color: var(--surface-3);
     transition: 300ms var(--ease-out);
     transition-property: color, scale;
+    z-index: 2;
+    /* Ensure the icon and button are above the canvas */
+    pointer-events: none;
 }
 
 .card button {
     opacity: 0;
+    z-index: 1;
+    /* Ensure the icon and button are above the canvas */
+    pointer-events: none;
 }
 
 .card:focus-within {

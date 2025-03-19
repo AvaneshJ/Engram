@@ -29,16 +29,41 @@ body {
     justify-content: center;
     align-items: center;
     font-family: 'CustomFont', sans-serif;
+    background-image: url('../Assets/BLACK.jpg');
+    /* Set the background image */
+    background-size: cover;
+    /* Ensure the background covers the entire viewport */
+    background-position: center;
+    /* Center the background image */
+    background-repeat: no-repeat;
+    /* Prevent the background from repeating */
+    position: relative;
+}
+
+body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    /* Dark tint overlay */
+    z-index: 1;
+    /* Ensure the overlay is behind the content */
+    pointer-events: none;
+    /* Allow interactions to pass through */
 }
 
 body {
     color: var(--fg);
-    background: var(--bg);
     padding: var(--space);
+    position: relative;
+    z-index: 2;
+    /* Ensure the content is above the overlay */
 }
 
 .main {
-    background-image: '../Assets/BLACK.jpg';
     display: grid;
     grid-template-columns: repeat(var(--count, 3), 1fr);
     gap: var(--space);
@@ -109,14 +134,12 @@ body {
     transition: 300ms var(--ease-out);
     transition-property: color, scale;
     z-index: 2;
-    /* Ensure the icon and button are above the canvas */
     pointer-events: none;
 }
 
 .card button {
     opacity: 0;
     z-index: 1;
-    /* Ensure the icon and button are above the canvas */
     pointer-events: none;
 }
 

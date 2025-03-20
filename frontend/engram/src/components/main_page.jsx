@@ -309,7 +309,7 @@ const PixelCanvas = () => {
                             d="M180,146H158V110h22a34,34,0,1,0-34-34V98H110V76a34,34,0,1,0-34,34H98v36H76a34,34,0,1,0,34,34V158h36v22a34,34,0,1,0,34-34ZM158,76a22,22,0,1,1,22,22H158ZM54,76a22,22,0,0,1,44,0V98H76A22,22,0,0,1,54,76ZM98,180a22,22,0,1,1-22-22H98Zm12-70h36v36H110Zm70,92a22,22,0,0,1-22-22V158h22a22,22,0,0,1,0,44Z">
                         </path>
                     </svg>
-                    <button style={{ position: "relative", zIndex: 2 }}>Replica</button>
+                    <span className="card-text">Replica</span>
                 </div>
             </a>
 
@@ -318,14 +318,14 @@ const PixelCanvas = () => {
                     <PixelCanvasDOM
                         gap="1"
                         speed="100"
-                        colors="#ff8080,rgb(255, 15, 15), #ff0000"
+                        colors="rgb(142, 0, 0),rgb(255, 15, 15), #ff0000"
                         noFocus={false}
                     />
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentcolor" viewBox="0 0 256 256" style={{ position: "relative", zIndex: 2 }}>
                         <path
                             d="M208,24H72A32,32,0,0,0,40,56V224a8,8,0,0,0,8,8H192a8,8,0,0,0,0-16H56a16,16,0,0,1,16-16H208a8,8,0,0,0,8-8V32A8,8,0,0,0,208,24Zm-8,160H72a31.82,31.82,0,0,0-16,4.29V56A16,16,0,0,1,72,40H200Z" />
                     </svg>
-                    <button style={{ position: "relative", zIndex: 2 }}>Diary</button>
+                    <span className="card-text">Diary</span>
                 </div>
             </a>
         </div>

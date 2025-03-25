@@ -74,9 +74,9 @@ def merge_data(prev_data, new_data):
         return new_data 
 
     updated_data = {}
-    for key in ["Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism"]:
+    for key in ["Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism", "Relations","Other"]:
         if key in new_data:
-            updated_data[key] = new_data[key]  
+            updated_data[key] = new_data[key]   
         elif key in prev_data:
             updated_data[key] = prev_data[key]  
 

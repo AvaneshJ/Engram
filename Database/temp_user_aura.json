@@ -1,20 +1,23 @@
 {
     "Openness": {
-        "Description": "The person enjoys exploring abstract ideas and deep philosophical discussions, indicating a high level of openness to new experiences and abstract thinking."
+        "Description": "Enjoys exploring abstract ideas, deep thinking, and intellectual discussions. Likes to journal and organize tasks."
     },
     "Conscientiousness": {
-        "Description": "The person tries to be reliable and supportive, often feels guilty when they procrastinate, and always meets deadlines, showing a high level of conscientiousness."
+        "Description": "Tries to be reliable and supportive, plans tasks ahead, meets deadlines, but procrastinates when feeling overwhelmed."
     },
     "Extraversion": {
-        "Description": "The person prefers deep one-on-one conversations and feels drained in big groups, suggesting a more introverted nature."
+        "Description": "Prefers deep one-on-one conversations, feels drained in big groups, worries about what others think."
     },
     "Agreeableness": {
-        "Description": "The person is supportive and helpful to friends, but may struggle with saying no, indicating a high level of agreeableness."
+        "Description": "Always tries to be reliable and supportive, finds it difficult to say no, doesn\u2019t want to disappoint others."
     },
     "Neuroticism": {
-        "Description": "The person worries about what others think, overanalyzes social interactions, and tends to reflect on past experiences, suggesting a higher level of neuroticism."
+        "Description": "Overanalyzes social interactions, worries about what others think, often replays conversations in her head, feels uncertain about herself."
     },
     "Relations": {
-        "Description": "The person values close relationships, as shown by their support for friends and reflection on personal growth. They have a best friend named Jene and express love for her."
+        "Description": "Jene is best friend"
+    },
+    "Other": {
+        "Description": "Important dates/memories: Reflects on past experiences, feels a mix of productivity, social interactions, and self-reflection"
     }
 }

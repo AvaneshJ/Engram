@@ -16,13 +16,18 @@ const DiaryApp = () => {
   }, []);
 
   const handleSaveEntry = (entry) => {
+    const now = new Date();
     const newEntry = {
       ...entry,
       id: Date.now(),
-      date: new Date().toLocaleDateString('en-US', {
+      date: now.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
+      }),
+      time: now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
       })
     };
 

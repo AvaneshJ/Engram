@@ -7,6 +7,17 @@ import "./DiaryApp.css";
 const DiaryApp = () => {
   const [entries, setEntries] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
+  // Time format
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   // Load entries on mount
   useEffect(() => {

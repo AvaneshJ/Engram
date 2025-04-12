@@ -1,31 +1,29 @@
-// routes/diaryRoute.js
 const express = require("express");
 const {
   createDiaryEntry,
   getDiaryEntries,
 } = require("../controllers/diaryController");
+const authenticateUser = require("../middleware/authmiddleware");
+
 const router = express.Router();
 
-// Replace with your actual test user ID
-const TEST_USER_ID = "67f68c50aa5b3ce5811a9382";
-
-// POST /api/diary/create
-// Inject test userId, then call controller
+// POST /api/diary/create (requires login)
 router.post(
   "/create",
+  authenticateUser,
   (req, res, next) => {
-    req.body.userId = TEST_USER_ID;
+    req.body.userId = req.userId;
     next();
   },
   createDiaryEntry
 );
 
-// GET /api/diary
-// Serve GET /api/diary (no param) and inject test userId
+// GET /api/diary (requires login)
 router.get(
   "/",
+  authenticateUser,
   (req, res, next) => {
-    req.params.userId = TEST_USER_ID;
+    req.params.userId = req.userId;
     next();
   },
   getDiaryEntries

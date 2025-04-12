@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
 export const Container = styled.div`
   background-color: #fff;
@@ -21,11 +21,14 @@ export const SignUpContainer = styled.div`
   width: 50%;
   opacity: 0;
   z-index: 1;
-  ${props => props.signinIn !== true ? `
+  ${(props) =>
+    props.signinIn !== true
+      ? `
     transform: translateX(100%);
     opacity: 1;
     z-index: 5;
-  ` : null}
+  `
+      : null}
 `;
 
 export const SignInContainer = styled.div`
@@ -36,7 +39,8 @@ export const SignInContainer = styled.div`
   left: 0;
   width: 50%;
   z-index: 2;
-  ${props => (props.signinIn !== true ? `transform: translateX(100%);` : null)}
+  ${(props) =>
+    props.signinIn !== true ? `transform: translateX(100%);` : null}
 `;
 
 export const Form = styled.form`
@@ -53,7 +57,7 @@ export const Form = styled.form`
 export const Title = styled.h1`
   font-weight: bold;
   margin: 0;
-  color: ${props => props.white ? '#ffffff' : '#333'};
+  color: ${(props) => (props.white ? "#ffffff" : "#333")};
 `;
 
 export const Input = styled.input`
@@ -108,12 +112,17 @@ export const OverlayContainer = styled.div`
   overflow: hidden;
   transition: transform 0.6s ease-in-out;
   z-index: 100;
-  ${props => props.signinIn !== true ? `transform: translateX(-100%);` : null}
+  ${(props) =>
+    props.signinIn !== true ? `transform: translateX(-100%);` : null}
 `;
 
 export const Overlay = styled.div`
   background: #2a99f8;
-  background: -webkit-linear-gradient(to right, rgb(43, 47, 255), rgb(56, 0, 113));
+  background: -webkit-linear-gradient(
+    to right,
+    rgb(43, 47, 255),
+    rgb(56, 0, 113)
+  );
   background: linear-gradient(to right, rgb(43, 117, 255), rgb(75, 3, 158));
   background-repeat: no-repeat;
   background-size: cover;
@@ -125,7 +134,7 @@ export const Overlay = styled.div`
   width: 200%;
   transform: translateX(0);
   transition: transform 0.6s ease-in-out;
-  ${props => (props.signinIn !== true ? `transform: translateX(50%);` : null)}
+  ${(props) => (props.signinIn !== true ? `transform: translateX(50%);` : null)}
 `;
 
 export const OverlayPanel = styled.div`
@@ -145,13 +154,13 @@ export const OverlayPanel = styled.div`
 
 export const LeftOverlayPanel = styled(OverlayPanel)`
   transform: translateX(-20%);
-  ${props => props.signinIn !== true ? `transform: translateX(0);` : null}
+  ${(props) => (props.signinIn !== true ? `transform: translateX(0);` : null)}
 `;
 
 export const RightOverlayPanel = styled(OverlayPanel)`
   right: 0;
   transform: translateX(0);
-  ${props => props.signinIn !== true ? `transform: translateX(20%);` : null}
+  ${(props) => (props.signinIn !== true ? `transform: translateX(20%);` : null)}
 `;
 
 export const Paragraph = styled.p`
@@ -161,4 +170,4 @@ export const Paragraph = styled.p`
   letter-spacing: 0.5px;
   margin: 20px 0 30px;
   color: #ffffff;
-`; 
+`;

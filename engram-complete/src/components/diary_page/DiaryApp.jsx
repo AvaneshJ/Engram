@@ -1,3 +1,4 @@
+// src/components/DiaryApp.js
 import React, { useState, useEffect } from "react";
 import { getDiaryEntries, createDiaryEntry } from "../../api/index";
 import DiaryForm from "./DiaryForm";
@@ -8,30 +9,39 @@ const DiaryApp = () => {
   const [entries, setEntries] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
 
-  // Load entries on mount
   useEffect(() => {
     (async () => {
       try {
-        const res = await getDiaryEntries();
-        setEntries(res.data);
+        const data = await getDiaryEntries();
+        setEntries(data);
       } catch (err) {
         console.error("Failed to load diary entries", err);
+        alert(
+          "Could not load diary entries. Please make sure you’re logged in."
+        );
       }
     })();
   }, []);
 
-  // Save new entry
   const handleSaveEntry = async ({ title, content }) => {
     try {
-      const res = await createDiaryEntry({ title, content });
-      setEntries([res.data.diaryEntry, ...entries]);
+      const data = await createDiaryEntry({ title, content });
+      setEntries([data.diaryEntry, ...entries]);
       setSelectedEntry(null);
     } catch (err) {
       console.error("Failed to create entry", err);
+      alert("Could not save diary entry. Please try again.");
     }
   };
 
-  const handleSelectEntry = (entry) => setSelectedEntry(entry);
+  const handleSelectEntry = (entry) => {
+    setSelectedEntry(entry);
+  };
+
+  // **NEW**: clear selection when user hits "Back"
+  const handleBack = () => {
+    setSelectedEntry(null);
+  };
 
   return (
     <div className="diary-app-container">
@@ -39,7 +49,11 @@ const DiaryApp = () => {
         <DiarySidebar entries={entries} onSelectEntry={handleSelectEntry} />
       </div>
       <div className="diary-main-content">
-        <DiaryForm onSave={handleSaveEntry} selectedEntry={selectedEntry} />
+        <DiaryForm
+          onSave={handleSaveEntry}
+          selectedEntry={selectedEntry}
+          onBack={handleBack} // pass it down
+        />
       </div>
     </div>
   );

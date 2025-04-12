@@ -1,14 +1,17 @@
 import React from "react";
 
 const DiarySidebar = ({ entries, onSelectEntry }) => {
-  // Time format
-  const formatDate = (dateStr) => {
+  // Time format with date + time
+  const formatDateTime = (dateStr) => {
     const date = new Date(dateStr);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
   };
+
   return (
     <div
       className="diary-entries-list"
@@ -88,7 +91,7 @@ const DiarySidebar = ({ entries, onSelectEntry }) => {
                 width: "100%",
               }}
             >
-              {formatDate(entry.date)}
+              {formatDateTime(entry.createdAt)}
             </p>
           </div>
         ))

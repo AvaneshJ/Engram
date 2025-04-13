@@ -25,12 +25,29 @@ const DiaryApp = () => {
 
   const handleSaveEntry = async ({ title, content }) => {
     try {
+      const token = localStorage.getItem("token");
+
+      // 1️⃣ Create the diary entry
       const data = await createDiaryEntry({ title, content });
       setEntries([data.diaryEntry, ...entries]);
       setSelectedEntry(null);
+
+      // 2️⃣ Recompute Aura
+      const auraRes = await fetch("http://localhost:5000/api/aura/update", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const auraData = await auraRes.json();
+      console.log("🧠 Updated aura/personality:", auraData.personality);
+
+      // 🧠 Optionally store the personality somewhere (e.g. context)
+      // setPersonality(auraData.personality); if you're using global state
     } catch (err) {
-      console.error("Failed to create entry", err);
-      alert("Could not save diary entry. Please try again.");
+      console.error("Failed to create entry or update aura", err);
+      alert("Something went wrong. Please try again.");
     }
   };
 

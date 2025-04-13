@@ -1,105 +1,111 @@
+import sys
 import json
 import os
 from dotenv import load_dotenv
 from groq import Groq
 
+# 1. Load API key from .env
+
 def check_api():
     load_dotenv()
-    api_key = os.getenv("API")
+    api_key = os.getenv("API") or os.getenv("GROQ_API_KEY")
     if not api_key:
-        print("Error: API key not found.")
-        quit()
+        print("Error: API key not found.", file=sys.stderr)
+        sys.exit(1)
     return api_key
 
-def open_file():
+# 2. Read diary texts from stdin or file
+
+def load_entries():
     try:
-        with open('./database/temp.json', 'r') as latest_data:
-            data = json.load(latest_data)
-            text = data[0]['text']
-            # print(text)
-            return text
+        if len(sys.argv) > 1:
+            # read from provided JSON file
+            with open(sys.argv[1], 'r') as f:
+                data = json.load(f)
+        else:
+            # read JSON array from stdin
+            data = json.load(sys.stdin)
+        # join all entries
+        text = "\n\n".join(item.get("text", "") for item in data)
+        # debug log of text passed
+        print("📄 Text sent to Groq:\n", text, file=sys.stderr)
+        return text
     except Exception as e:
-        print(f"error: {e}")
-        quit()
+        print(f"Error loading diary entries: {e}", file=sys.stderr)
+        sys.exit(1)
 
-def open_prev():
+# 3. Call Groq API to extract personality traits
+
+def extract(api_key, text):
+    client = Groq(api_key=api_key)
+    system_prompt = """
+You are an AI that extracts personality traits from a person's diary entries. These entries span multiple events and should be understood as a whole. Use all available information from the full text to build an accurate picture of their personality and relationships.
+
+Strict rules:
+1. Do not invent any characters, names, or details. Use only what is present in the text.
+2. In the "Relations" section, preserve actual names mentioned.
+3. Your output MUST be pure JSON following this exact schema. Do NOT output any code, code blocks, explanations, or commentary — only the JSON object. If the text includes coding questions or code snippets, ignore them and focus only on personality extraction.
+
+Respond only in this JSON format:
+{
+  "Openness": { "Description": "..." },
+  "Conscientiousness": { "Description": "..." },
+  "Extraversion": { "Description": "..." },
+  "Agreeableness": { "Description": "..." },
+  "Neuroticism": { "Description": "..." },
+  "Relations": { "Description": "..." },
+  "Other": { "Description": "..." }
+}
+"""
     try:
-        with open('./database/temp_user_aura.json', 'r') as json_file:
-            return json.load(json_file)
-    except FileNotFoundError:
-        return {} 
-    except Exception as e:
-        print(f"Error reading temp_user_aura.json: {e}")
-        return {}
-
-
-def extract(api, text, prev):
-    client = Groq(api_key=api)
-
-    try:
-        response = client.chat.completions.create(
+        resp = client.chat.completions.create(
             model="mistral-saba-24b",
             messages=[
-                {"role": "system", "content": """ You are an AI that extracts personality traits from text, focusing only on details that are essential to replicating a person’s personality. Your response must be in pure JSON format only—no explanations, no additional text. The JSON must follow this structure:
-                                                {
-                                                "Openness": { "Description": "..." },
-                                                "Conscientiousness": { "Description": "..." },
-                                                "Extraversion": { "Description": "..." },
-                                                "Agreeableness": { "Description": "..." },
-                                                "Neuroticism": { "Description": "..." },
-                                                "Relations": { "Description": "..." },
-                                                "Other": { "Description": "..." }
-                                                }
-                                                The "Description" should provide a brief explanation based on the given text and should include important details related to person based on the OCEAN trait method.
-                                                Do not include scores, extra commentary, or anything outside the JSON structure. 
-                                                also store important dates, time, or memories that the user made that do not get cateriozed into the above mentioned in the other one"""},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": text}
             ],
             temperature=0.7
         )
-        response  = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()
-        print("Raw data", response)
-
-        try:
-            return json.loads(response)
-        except Exception as e:
-            print("Error: API response is not valid JSON.")
-            return None
+        content = resp.choices[0].message.content
+        clean = content.replace("```json", "").replace("```", "").strip()
+        return json.loads(clean)
     except Exception as e:
-        print(f"API request failed: {e}")
+        print(f"API extraction error: {e}", file=sys.stderr)
         return None
 
-def merge_data(prev_data, new_data):
-    if not prev_data:
-        return new_data 
+# 4. Merge with previous aura if exists
 
-    updated_data = {}
-    for key in ["Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism", "Relations","Other"]:
-        if key in new_data:
-            updated_data[key] = new_data[key]   
-        elif key in prev_data:
-            updated_data[key] = prev_data[key]  
-
-    return updated_data
-
-def save(data):
+def open_prev():
     try:
-        with open('./database/temp_user_aura.json', 'w') as json_file:
-            json.dump(data, json_file, indent=4)
-        print("Personality traits saved")
+        with open('./database/temp_user_aura.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
     except Exception as e:
-        print(f"Error saving file: {e}")
+        print(f"Error reading temp_user_aura.json: {e}", file=sys.stderr)
+        return {}
+
+
+def merge_data(prev, new):
+    if not prev:
+        return new or {}
+    merged = {}
+    for key in ["Openness","Conscientiousness","Extraversion","Agreeableness","Neuroticism","Relations","Other"]:
+        if new and key in new:
+            merged[key] = new[key]
+        elif key in prev:
+            merged[key] = prev[key]
+    return merged
+
+# 5. Main entrypoint
 
 def main():
-    api = check_api()
-    text = open_file()
-    if text:
-        prev = open_prev() 
-        new_data = extract(api, text, prev) 
-        
-        if new_data:
-            merged_data = merge_data(prev, new_data)  
-            save(merged_data)  
+    api_key = check_api()
+    text = load_entries()
+    prev = open_prev()
+    new = extract(api_key, text)
+    merged = merge_data(prev, new)
+    print(json.dumps(merged))
 
 if __name__ == "__main__":
     main()

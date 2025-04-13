@@ -2,6 +2,7 @@ const express = require("express");
 const {
   createDiaryEntry,
   getDiaryEntries,
+  getAura,
 } = require("../controllers/diaryController");
 const authenticateUser = require("../middleware/authmiddleware");
 

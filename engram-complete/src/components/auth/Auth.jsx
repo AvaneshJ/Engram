@@ -82,9 +82,11 @@ const Auth = () => {
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
+      console.log("Login Response Data:", data);
 
       if (response.ok) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("userName", data.name);
         navigate("/new_page");
       } else {
         setMessage(data.message || "Login failed.");

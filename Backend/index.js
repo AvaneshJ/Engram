@@ -8,7 +8,7 @@ const diaryRoutes = require("./routes/diaryRoute");
 const auraRoutes = require("./routes/auraRoute");
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
+app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(express.json());
 
 // Connect to MongoDB
@@ -22,5 +22,5 @@ app.use("/api/users", userRoutes);
 app.use("/api/diary", diaryRoutes);
 app.use("/api/aura", auraRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -14,7 +14,7 @@ const ChatInterface = () => {
   const navigate = useNavigate();
   const userName = localStorage.getItem("userName");
   const apiKey = import.meta.env.VITE_API_KEY;
-  const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  const baseUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
 
   // Fetch personality data from /api/aura
   // inside useEffect(() => { … }, []);

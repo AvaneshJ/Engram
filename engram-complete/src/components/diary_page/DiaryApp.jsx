@@ -33,12 +33,15 @@ const DiaryApp = () => {
       setSelectedEntry(null);
 
       // 2️⃣ Recompute Aura
-      const auraRes = await fetch("http://localhost:5000/api/aura/update", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const auraRes = await fetch(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/aura/update`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const auraData = await auraRes.json();
       console.log("🧠 Updated aura/personality:", auraData.personality);

@@ -1,5 +1,5 @@
 // src/api/index.js
-const BASE_URL = "http://localhost:5000/api/diary";
+const BASE_URL = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/diary`;
 
 function getAuthHeader() {
   const token = localStorage.getItem("token");

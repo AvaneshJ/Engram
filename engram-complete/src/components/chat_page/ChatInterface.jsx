@@ -26,6 +26,7 @@ const ChatInterface = () => {
     }
 
     // 1️⃣ Recompute the aura on the backend
+    console.log(import.meta.env.VITE_REACT_APP_BACKEND_BASEURL);
 
     fetch(`${baseUrl}/api/aura/update`, {
       method: "POST",

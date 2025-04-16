@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from groq import Groq
 
 # 1. Load API key from .env
-
 def check_api():
     load_dotenv()
     api_key = os.getenv("API") or os.getenv("GROQ_API_KEY")
@@ -15,19 +14,21 @@ def check_api():
     return api_key
 
 # 2. Read diary texts from stdin or file
-
 def load_entries():
     try:
         if len(sys.argv) > 1:
-            # read from provided JSON file
-            with open(sys.argv[1], 'r') as f:
+            # Read from provided JSON file with encoding and error handling.
+            with open(sys.argv[1], 'r', encoding="utf-8", errors="replace") as f:
                 data = json.load(f)
         else:
-            # read JSON array from stdin
+            # Read JSON array from stdin with error handling.
             data = json.load(sys.stdin)
-        # join all entries
+        
+        # Join all entries and sanitize the text for any encoding issues.
         text = "\n\n".join(item.get("text", "") for item in data)
-        # debug log of text passed
+        text = text.encode("utf-8", errors="replace").decode("utf-8")
+        
+        # Debug log of text passed, using UTF-8 safe output.
         print("📄 Text sent to Groq:\n", text, file=sys.stderr)
         return text
     except Exception as e:
@@ -35,7 +36,6 @@ def load_entries():
         sys.exit(1)
 
 # 3. Call Groq API to extract personality traits
-
 def extract(api_key, text):
     client = Groq(api_key=api_key)
     system_prompt = """
@@ -74,10 +74,9 @@ Respond only in this JSON format:
         return None
 
 # 4. Merge with previous aura if exists
-
 def open_prev():
     try:
-        with open('./database/temp_user_aura.json', 'r') as f:
+        with open('./database/temp_user_aura.json', 'r', encoding="utf-8", errors="replace") as f:
             return json.load(f)
     except FileNotFoundError:
         return {}
@@ -85,12 +84,11 @@ def open_prev():
         print(f"Error reading temp_user_aura.json: {e}", file=sys.stderr)
         return {}
 
-
 def merge_data(prev, new):
     if not prev:
         return new or {}
     merged = {}
-    for key in ["Openness","Conscientiousness","Extraversion","Agreeableness","Neuroticism","Relations","Other"]:
+    for key in ["Openness", "Conscientiousness", "Extraversion", "Agreeableness", "Neuroticism", "Relations", "Other"]:
         if new and key in new:
             merged[key] = new[key]
         elif key in prev:
@@ -98,14 +96,13 @@ def merge_data(prev, new):
     return merged
 
 # 5. Main entrypoint
-
 def main():
     api_key = check_api()
     text = load_entries()
     prev = open_prev()
     new = extract(api_key, text)
     merged = merge_data(prev, new)
-    print(json.dumps(merged))
+    print(json.dumps(merged, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":
     main()

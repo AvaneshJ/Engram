@@ -13,6 +13,7 @@ import Auth from "./components/auth/Auth";
 import NewPage from './components/new_page/new_page';
 import ChatInterface from "./components/chat_page/ChatInterface";
 import DiaryApp from "./components/diary_page/DiaryApp";
+import ReviewPage from "./components/review_page/ReviewPage";
 
 const LandingPage = () => (
   <main className="relative overflow-hidden">
@@ -41,6 +42,7 @@ const App = () => {
           <Route path="/new_page" element={<NewPage />} />
           <Route path="/chat" element={<ChatInterface />} />
           <Route path="/diary" element={<DiaryApp />} />
+          <Route path="/review" element={<ReviewPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

@@ -100,33 +100,33 @@ const ReviewPage = () => {
         <form onSubmit={handleSubmit}>
           <div className="criteria-section">
             <div className="criterion">
-              <h3>Openness</h3>
+              <h3>Creativity</h3>
               <div className="stars-container">{renderStars("openness")}</div>
             </div>
 
             <div className="criterion">
-              <h3>Conscientiousness</h3>
+              <h3>Clarity</h3>
               <div className="stars-container">
                 {renderStars("conscientiousness")}
               </div>
             </div>
 
             <div className="criterion">
-              <h3>Extraversion</h3>
+              <h3>Confidence</h3>
               <div className="stars-container">
                 {renderStars("extraversion")}
               </div>
             </div>
 
             <div className="criterion">
-              <h3>Agreeableness</h3>
+              <h3>Kindness</h3>
               <div className="stars-container">
                 {renderStars("agreeableness")}
               </div>
             </div>
 
             <div className="criterion">
-              <h3>Neuroticism</h3>
+              <h3>Calmness</h3>
               <div className="stars-container">
                 {renderStars("neuroticism")}
               </div>

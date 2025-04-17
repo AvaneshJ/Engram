@@ -15,6 +15,18 @@ const ChatInterface = () => {
   const userName = localStorage.getItem("userName");
   const apiKey = import.meta.env.VITE_API_KEY;
   const baseUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+  // inside ChatInterface.jsx
+  const [accuracy, setAccuracy] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch(`${baseUrl}/api/accuracy`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setAccuracy(data))
+      .catch(console.error);
+  }, []);
 
   // Fetch personality data from /api/aura
   // inside useEffect(() => { … }, []);
@@ -217,6 +229,11 @@ Any answer outside this identity is a failure.
       <div className="chat-container">
         <header className="chat-header">
           <div className="logo">Engram Chat</div>
+          {accuracy && (
+            <div className="accuracy-badge">
+              Accuracy: {(accuracy.overallScore * 10).toFixed(1)}%
+            </div>
+          )}
           <div className="header-buttons">
             <button
               className="theme-toggle"
@@ -261,7 +278,7 @@ Any answer outside this identity is a failure.
             </button>
             <button
               className="review-button"
-              onClick={() => navigate('/review')}
+              onClick={() => navigate("/review")}
               title="Rate your experience"
             >
               <svg
@@ -292,10 +309,11 @@ Any answer outside this identity is a failure.
             messages.map((message, index) => (
               <div
                 key={index}
-                className={`message ${message.role === "assistant"
-                  ? "assistant-message"
-                  : "user-message"
-                  }`}
+                className={`message ${
+                  message.role === "assistant"
+                    ? "assistant-message"
+                    : "user-message"
+                }`}
               >
                 <div className="message-content">{message.content}</div>
               </div>

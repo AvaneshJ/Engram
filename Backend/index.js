@@ -6,6 +6,8 @@ const cors = require("cors");
 const userRoutes = require("./routes/userRoute");
 const diaryRoutes = require("./routes/diaryRoute");
 const auraRoutes = require("./routes/auraRoute");
+const reviewRoutes = require("./routes/review");
+const accuracyRoutes = require("./routes/accuracy");
 
 const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL }));
@@ -21,6 +23,8 @@ mongoose
 app.use("/api/users", userRoutes);
 app.use("/api/diary", diaryRoutes);
 app.use("/api/aura", auraRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/accuracy", accuracyRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

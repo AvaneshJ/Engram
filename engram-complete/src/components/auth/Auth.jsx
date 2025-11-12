@@ -1,14 +1,37 @@
 import React, { useState } from "react";
+<<<<<<< HEAD
 import { useNavigate } from "react-router-dom";
 import "./styles.css";
+=======
+import * as Components from "./AuthComponents";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+
+const MessageBox = styled.div`
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #000000; /* changed to black */
+  background-color: ${(props) =>
+    props.type === "error" ? "rgba(255, 0, 0, 0.1)" : "rgba(0, 255, 0, 0.1)"};
+`;
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
 
 const Auth = () => {
   const [signIn, toggle] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+<<<<<<< HEAD
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+=======
+  const [message, setMessage] = useState(""); // ← message text
+  const [messageType, setMessageType] = useState(""); // ← "error" or "success"
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
   const navigate = useNavigate();
 
   const clearMessage = () => {
@@ -75,6 +98,10 @@ const Auth = () => {
         }
       );
       const data = await response.json();
+<<<<<<< HEAD
+=======
+      console.log("Login Response Data:", data);
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
 
       if (response.ok) {
         localStorage.setItem("token", data.token);
@@ -92,6 +119,7 @@ const Auth = () => {
   };
 
   return (
+<<<<<<< HEAD
     <div className="auth-page-wrapper">
       <div className="auth-container">
         <div className={`panel sign-up-container ${!signIn ? "active" : ""}`}>
@@ -197,8 +225,117 @@ const Auth = () => {
           </div>
         </div>
       </div>
+=======
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{
+        backgroundImage:
+          "url('/src/components/auth/assets/background (1).jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        width: "100%",
+        height: "100vh",
+      }}
+    >
+      <Components.Container>
+        {/* SIGN UP PANEL */}
+        <Components.SignUpContainer signinIn={signIn}>
+          <Components.Form onSubmit={handleSignUp}>
+            {message && messageType && (
+              <MessageBox type={messageType}>{message}</MessageBox>
+            )}
+            <Components.Title>Create Account</Components.Title>
+            <Components.Input
+              type="text"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Components.Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Components.Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Components.Button type="submit">Sign Up</Components.Button>
+          </Components.Form>
+        </Components.SignUpContainer>
+
+        {/* SIGN IN PANEL */}
+        <Components.SignInContainer signinIn={signIn}>
+          <Components.Form onSubmit={handleSignIn}>
+            {message && messageType && (
+              <MessageBox type={messageType}>{message}</MessageBox>
+            )}
+            <Components.Title>Sign in</Components.Title>
+            <Components.Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Components.Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Components.Anchor href="#">
+              Forgot your password?
+            </Components.Anchor>
+            <Components.Button type="submit">Sign In</Components.Button>
+          </Components.Form>
+        </Components.SignInContainer>
+
+        {/* OVERLAY PANELS */}
+        <Components.OverlayContainer signinIn={signIn}>
+          <Components.Overlay signinIn={signIn}>
+            <Components.LeftOverlayPanel signinIn={signIn}>
+              <Components.Title white>Welcome Back!</Components.Title>
+              <Components.Paragraph>
+                To keep connected with us please login with your personal info
+              </Components.Paragraph>
+              <Components.GhostButton
+                onClick={() => {
+                  clearMessage();
+                  toggle(true);
+                }}
+              >
+                Sign In
+              </Components.GhostButton>
+            </Components.LeftOverlayPanel>
+
+            <Components.RightOverlayPanel signinIn={signIn}>
+              <Components.Title white>Welcome!</Components.Title>
+              <Components.Paragraph>
+                Enter your details and start your journey with us
+              </Components.Paragraph>
+              <Components.GhostButton
+                onClick={() => {
+                  clearMessage();
+                  toggle(false);
+                }}
+              >
+                Sign Up
+              </Components.GhostButton>
+            </Components.RightOverlayPanel>
+          </Components.Overlay>
+        </Components.OverlayContainer>
+      </Components.Container>
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default Auth;
+=======
+export default Auth;
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720

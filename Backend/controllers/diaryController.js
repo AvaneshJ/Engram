@@ -1,12 +1,20 @@
 // controllers/diaryController.js
 const Diary = require("../models/diary");
 const Aura = require("../models/Aura");
+<<<<<<< HEAD
 const { fork } = require("child_process");
+=======
+const { spawn } = require("child_process");
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
 const fs = require("fs");
 const path = require("path");
 
 /**
+<<<<<<< HEAD
  * Helper that pulls all diaries, runs extractor.js, upserts Aura.
+=======
+ * Helper that pulls all diaries, runs extractor.py, upserts Aura.
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
  * Returns a Promise that resolves to the updated Aura doc, or rejects on error.
  */
 async function updateUserAura(userId) {
@@ -22,13 +30,23 @@ async function updateUserAura(userId) {
   const tempFile = path.join(tempDir, `diary_${userId}.json`);
   fs.writeFileSync(tempFile, JSON.stringify(payload, null, 2));
 
+<<<<<<< HEAD
   // 3️⃣ Fork the Node.js extractor
   return new Promise((resolve, reject) => {
     const extractor = fork(path.join(__dirname, "../../extractor.js"), [tempFile]);
+=======
+  // 3️⃣ Spawn the Python extractor
+  return new Promise((resolve, reject) => {
+    const extractor = spawn("python3", [
+      path.join(__dirname, "../../extractor.py"),
+      tempFile,
+    ]);
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
 
     let stdout = "";
     let stderr = "";
 
+<<<<<<< HEAD
     extractor.on("message", (message) => {
       if (message.type === "stdout") {
         stdout += message.data;
@@ -36,6 +54,10 @@ async function updateUserAura(userId) {
         stderr += message.data;
       }
     });
+=======
+    extractor.stdout.on("data", (data) => (stdout += data.toString()));
+    extractor.stderr.on("data", (data) => (stderr += data.toString()));
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
 
     extractor.on("close", async (code) => {
       if (code !== 0) {
@@ -59,10 +81,13 @@ async function updateUserAura(userId) {
         reject(mongoErr);
       }
     });
+<<<<<<< HEAD
 
     extractor.on("error", (err) => {
       reject(err);
     });
+=======
+>>>>>>> 2becc02c67e33da4ff40445add7c186124561720
   });
 }
 

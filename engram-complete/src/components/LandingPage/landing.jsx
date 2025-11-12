@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import './LandingPage.css';
 import dotPattern from '../LandingPage/assets/Logo.svg';
-import diary from '../LandingPage/assets/Diary.png';
-import review from '../LandingPage/assets/review.png';
-import OCEAN from '../LandingPage/assets/OCEAN.png';
+import diary from '../LandingPage/assets/Diary.jpg';
+import review from '../LandingPage/assets/review.jpg';
+import OCEAN from '../LandingPage/assets/OCEAN.jpg';
 
 export default function LandingPage() {
     const [activeQuestion, setActiveQuestion] = useState(null);
@@ -18,11 +18,10 @@ export default function LandingPage() {
             setIsLoaded(true);
         }, 300);
 
-        // Create intersection observer for all sections
         const observerOptions = {
-            root: null, // viewport
+            root: null, 
             rootMargin: '0px',
-            threshold: 0.2 // 20% of the element must be visible
+            threshold: 0.2 
         };
 
         const sectionObserver = new IntersectionObserver((entries) => {
@@ -33,14 +32,12 @@ export default function LandingPage() {
             });
         }, observerOptions);
 
-        // Observe all sections
         if (sectionOneRef.current) sectionObserver.observe(sectionOneRef.current);
         if (sectionTwoRef.current) sectionObserver.observe(sectionTwoRef.current);
         if (sectionThreeRef.current) sectionObserver.observe(sectionThreeRef.current);
         if (faqSectionRef.current) sectionObserver.observe(faqSectionRef.current);
 
         return () => {
-            // Clean up observer
             if (sectionOneRef.current) sectionObserver.unobserve(sectionOneRef.current);
             if (sectionTwoRef.current) sectionObserver.unobserve(sectionTwoRef.current);
             if (sectionThreeRef.current) sectionObserver.unobserve(sectionThreeRef.current);
@@ -59,11 +56,11 @@ export default function LandingPage() {
         },
         {
             question: "How will my final digital version be usable?",
-            answer: "Your final digital replica will be delivered through the a seperate page, test, and interact with it"
+            answer: "Your final digital replica will be delivered through the a seperate page, where you can test and interact with it"
         },
         {
             question: "Can I upgrade my digital version?",
-            answer: "Yes, you can upgrade your digital version at any time. We offer different tiers of service with additional features and capabilities that can be added as-per your needs."
+            answer: "Yes, you can upgrade your digital version at any time. We will offer different tiers of service with additional features and capabilities that can be added as-per your needs."
         },
         {
             question: "Do I get full ownership of my personality?",
@@ -71,7 +68,7 @@ export default function LandingPage() {
         },
         {
             question: "What are your payment methods?",
-            answer: "We accept all major credit cards, UPI, and bank transfers. Payment plans are also available for our premium packages."
+            answer: "We will accept all major credit cards, UPI, and bank transfers. Payment plans are currently under developement for our premium packages."
         },
         {
             question: "Can I request a deletion?",
@@ -88,10 +85,7 @@ export default function LandingPage() {
             <header className="main-header">
                 <div className="logo">Engram</div>
                 <nav className="navigation">
-                    <div className="nav-item">
-                        <span>Process</span>
-                        <span className="badge">NEW</span>
-                    </div>
+                    <div className="nav-item">Process</div>
                     <div className="nav-item" onClick={() => window.location.href = '/auth'}>Signup</div>
                 </nav>
             </header>
@@ -104,9 +98,7 @@ export default function LandingPage() {
                 <h1 className="headline">
                     Engram
                 </h1>
-                <p className="subheadline">
-                    Replicate your digital self.
-                </p>
+                <p className="subheadline">Replicate your digital self.</p>
                 <button className="cta-button" onClick={() => window.location.href = '/auth'}>
                     Free – Start Now
                 </button>
@@ -177,7 +169,7 @@ export default function LandingPage() {
                             </button>
                             {activeQuestion === index && (
                                 <div className="faq-answer">
-                                    <p>{item.answer}</p>
+                                    <p className='ans-text'>{item.answer}</p>
                                 </div>
                             )}
                         </div>

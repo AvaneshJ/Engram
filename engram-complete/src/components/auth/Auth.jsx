@@ -92,65 +92,92 @@ const Auth = () => {
   };
 
   return (
-    <div className="page-wrapper">
-      <div className="container">
-        {/* SIGN UP PANEL */}
-        <div className={`sign-up-container ${!signIn ? "active" : ""}`}>
+    <div className="auth-page-wrapper">
+      <div className="auth-container">
+        <div className={`panel sign-up-container ${!signIn ? "active" : ""}`}>
           <form onSubmit={handleSignUp}>
             {message && <div className={`message-box ${messageType}`}>{message}</div>}
-            <h1>Create Account</h1>
-            <input
-              type="text"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button type="submit" className="btn">Sign Up</button>
+            <h1 className="auth-title">Create Account</h1>
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="auth-btn">Sign Up</button>
+            <div className="mobile-toggle">
+              <p>Already have an account?</p>
+              <button
+                type="button"
+                onClick={() => { clearMessage(); toggle(true); }}
+                className="toggle-link"
+              >
+                Sign In
+              </button>
+            </div>
           </form>
         </div>
 
-        {/* SIGN IN PANEL */}
-        <div className={`sign-in-container ${signIn ? "active" : ""}`}>
+        <div className={`panel sign-in-container ${signIn ? "active" : ""}`}>
           <form onSubmit={handleSignIn}>
             {message && <div className={`message-box ${messageType}`}>{message}</div>}
-            <h1>Sign in</h1>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <a href="#" className="anchor">Forgot your password?</a>
-            <button type="submit" className="btn">Sign In</button>
+            <h1 className="auth-title">Sign In</h1>
+            <div className="input-group">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <a href="#" className="forgot-password">Forgot your password?</a>
+            <button type="submit" className="auth-btn">Sign In</button>
+            <div className="mobile-toggle">
+              <p>Don't have an account?</p>
+              <button
+                type="button"
+                onClick={() => { clearMessage(); toggle(false); }}
+                className="toggle-link"
+              >
+                Sign Up
+              </button>
+            </div>
           </form>
         </div>
 
-        {/* OVERLAY PANELS */}
         <div className={`overlay-container ${!signIn ? "right-panel-active" : ""}`}>
           <div className="overlay">
             <div className="overlay-panel overlay-left">
-              <h1 className="white">Welcome Back!</h1>
-              <p>To keep connected with us please login with your personal info</p>
+              <h1 className="overlay-title">Welcome Back</h1>
+              <p>Access your Engram account and continue your journey</p>
               <button
-                className="ghost btn"
+                className="auth-btn ghost"
                 onClick={() => { clearMessage(); toggle(true); }}
               >
                 Sign In
@@ -158,10 +185,10 @@ const Auth = () => {
             </div>
 
             <div className="overlay-panel overlay-right">
-              <h1 className="white">Welcome!</h1>
-              <p>Enter your details and start your journey with us</p>
+              <h1 className="overlay-title">Hello, Friend!</h1>
+              <p>Enter your details and start your journey with Engram</p>
               <button
-                className="ghost btn"
+                className="auth-btn ghost"
                 onClick={() => { clearMessage(); toggle(false); }}
               >
                 Sign Up

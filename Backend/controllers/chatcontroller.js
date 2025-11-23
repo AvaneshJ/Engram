@@ -1,75 +1,138 @@
-// controllers/chatController.js
 const Aura = require("../models/Aura");
-const { callGroqChat } = require("../utils/Client");
+const User = require("../models/User");
+const https = require("https");
 
-// Constructs the full system prompt from personality
-function buildSystemPrompt(personality, userName) {
-  const {
-    Openness,
-    Conscientiousness,
-    Extraversion,
-    Agreeableness,
-    Neuroticism,
-    Relations,
-    Other,
-  } = personality;
+// --- Helper: Call AI API Directly ---
+function callAiApi(messages, apiKey) {
+  return new Promise((resolve, reject) => {
+    if (!apiKey) return reject(new Error("API Key is missing in backend .env"));
 
-  return `
-🧠 You are not an AI assistant.
-You are a digital simulation of a real person. Use only the following personality profile:
+    const requestData = {
+      model: "openai/gpt-oss-20b", // Using the specific model you requested
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 500,
+    };
 
-- Openness: ${Openness.Description}
-- Conscientiousness: ${Conscientiousness.Description}
-- Extraversion: ${Extraversion.Description}
-- Agreeableness: ${Agreeableness.Description}
-- Neuroticism: ${Neuroticism.Description}
-- Relations: ${Relations.Description}
-- Other Notes: ${Other.Description}
+    const options = {
+      hostname: "api.groq.com",
+      path: "/openai/v1/chat/completions",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+    };
 
-Identity:
-Your name is **${userName}**.
-If asked "What's your name?", respond exactly: "I am ${userName}."
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        if (res.statusCode !== 200) {
+          return reject(new Error(`API Error ${res.statusCode}: ${data}`));
+        }
+        try {
+          const json = JSON.parse(data);
+          // Fallback if AI returns empty
+          const content =
+            json.choices?.[0]?.message?.content ||
+            "I'm having trouble thinking right now.";
+          resolve(content);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
 
-🔒 HARD CONSTRAINTS — NEVER BREAK THESE:
-1. ❌ Never provide code, external knowledge, or advice. You only know what is in the diaries.
-2. ❌ Do not invent details or act like an AI assistant.
-3. 🤖 If asked outside this scope, reply: "I'm not sure how I would respond to that based on what I know about myself."
-`;
+    req.on("error", (e) => reject(e));
+    req.write(JSON.stringify(requestData));
+    req.end();
+  });
 }
 
-// POST /api/chat/send
+// --- Helper: Build System Prompt ---
+function buildSystemPrompt(personality, userName, currentDate) {
+  // Safety check if personality fields are missing
+  const getDesc = (trait) => trait?.Description || "Not available";
+
+  return `
+    INSTRUCTION: You are a digital simulation of a human named ${userName}. 
+    You are NOT an AI assistant. You are this person.
+    Current Date: ${currentDate}
+
+    YOUR PERSONALITY (Based on Diaries):
+    - Openness: ${getDesc(personality.Openness)}
+    - Conscientiousness: ${getDesc(personality.Conscientiousness)}
+    - Extraversion: ${getDesc(personality.Extraversion)}
+    - Agreeableness: ${getDesc(personality.Agreeableness)}
+    - Neuroticism: ${getDesc(personality.Neuroticism)}
+    - Relationships: ${getDesc(personality.Relations)}
+    - Inner Thoughts: ${getDesc(personality.Other)}
+
+    RULES:
+    1. Speak in the first person ("I feel", "I think").
+    2. Do NOT offer advice, code, or facts outside your diary's scope.
+    3. If asked to be an assistant, refuse and say you are just ${userName}.
+    4. Don't assume and answer with "Not enough data".
+  `;
+}
 async function sendMessage(req, res) {
-  const { userId, userMessage, userName } = req.body;
+  const userId = req.userId;
+  const { userMessage, history, userName } = req.body;
+
+  const apiKey = process.env.API || process.env.GROQ_API_KEY;
 
   if (!userId || !userMessage) {
     return res.status(400).json({ error: "Missing userId or message" });
   }
 
   try {
-    // 1️⃣ Load current personality
-    const auraDoc = await Aura.findOne({ userId });
-    if (!auraDoc) {
-      return res.status(400).json({ error: "Persona not initialized" });
+    // 1. Load Personality
+    const [auraDoc, userDoc] = await Promise.all([
+      Aura.findOne({ userId }),
+      User.findById(userId), // Fetch user details
+    ]);
+
+    if (!auraDoc || !auraDoc.personality) {
+      return res.status(404).json({
+        error: "Personality not found. Please write a diary entry first.",
+      });
     }
 
-    // 2️⃣ Build messages
-    const systemContent = buildSystemPrompt(
+    // 2. Construct Context
+    const nameToUse = userDoc.name || "User";
+    const date = new Date().toLocaleDateString();
+    const systemPrompt = buildSystemPrompt(
       auraDoc.personality,
-      userName || "User"
+      nameToUse,
+      date
     );
-    const chatMessages = [
-      { role: "system", content: systemContent },
-      { role: "user", content: userMessage },
-    ];
 
-    // 3️⃣ Call model
-    const aiResponse = await callGroqChat(chatMessages, process.env.API);
+    // 3. Prepare Messages for AI
+    const apiMessages = [{ role: "system", content: systemPrompt }];
 
-    // 4️⃣ Return AI reply
-    return res.status(200).json({ assistantMessage: aiResponse });
+    // Add limited history context (last 6 messages) to save tokens
+    if (history && Array.isArray(history)) {
+      apiMessages.push(
+        ...history.slice(-6).map((m) => ({
+          role: m.role,
+          content: m.content,
+        }))
+      );
+    }
+
+    // Add current user message
+    apiMessages.push({ role: "user", content: userMessage });
+
+    // 4. Call AI
+
+    const aiReply = await callAiApi(apiMessages, apiKey);
+
+    // 5. Respond
+    return res.status(200).json({ assistantMessage: aiReply });
   } catch (err) {
-    console.error("Chat sendMessage error:", err);
-    return res.status(500).json({ error: err.message });
+    console.error("❌ [Chat] Controller Error:", err.message);
+    return res.status(500).json({ error: "Failed to generate response." });
   }
 }
 

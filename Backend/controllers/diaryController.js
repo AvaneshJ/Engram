@@ -1,110 +1,121 @@
-// controllers/diaryController.js
 const Diary = require("../models/diary");
 const Aura = require("../models/Aura");
 const { fork } = require("child_process");
-const fs = require("fs");
 const path = require("path");
 
-/**
- * Helper that pulls all diaries, runs extractor.js, upserts Aura.
- * Returns a Promise that resolves to the updated Aura doc, or rejects on error.
- */
-async function updateUserAura(userId) {
-  // 1️⃣ Fetch all diaries
-  const diaries = await Diary.find({ userId }).sort({ createdAt: 1 });
-  if (!diaries.length) throw new Error("No diaries to analyze");
+// Fallback personality
+const FALLBACK_PERSONALITY = {
+  Openness: { Description: "Curious and open to new experiences." },
+  Conscientiousness: { Description: "Thoughtful and organized." },
+  Extraversion: { Description: "Balanced energy levels." },
+  Agreeableness: { Description: "Friendly and cooperative." },
+  Neuroticism: { Description: "Generally calm and stable." },
+  Relations: { Description: "Values personal connections." },
+  Other: { Description: "Generated via fallback system." },
+};
 
-  const payload = diaries.map((d) => ({ text: d.content }));
+const triggerAuraUpdate = (userId) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const diaries = await Diary.find({ userId }).sort({ createdAt: 1 });
 
-  // 2️⃣ Write temp JSON file
-  const tempDir = path.join(__dirname, "../database");
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
-  const tempFile = path.join(tempDir, `diary_${userId}.json`);
-  fs.writeFileSync(tempFile, JSON.stringify(payload, null, 2));
-
-  // 3️⃣ Fork the Node.js extractor
-  return new Promise((resolve, reject) => {
-    const extractor = fork(path.join(__dirname, "../../extractor.js"), [tempFile]);
-
-    let stdout = "";
-    let stderr = "";
-
-    extractor.on("message", (message) => {
-      if (message.type === "stdout") {
-        stdout += message.data;
-      } else if (message.type === "stderr") {
-        stderr += message.data;
-      }
-    });
-
-    extractor.on("close", async (code) => {
-      if (code !== 0) {
-        return reject(new Error(`Extractor exited ${code}: ${stderr}`));
-      }
-      let personality;
-      try {
-        personality = JSON.parse(stdout);
-      } catch (e) {
-        return reject(new Error("Invalid JSON from extractor: " + e.message));
+      if (!diaries.length) {
+        return resolve(null);
       }
 
-      try {
-        const auraDoc = await Aura.findOneAndUpdate(
-          { userId },
-          { personality },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-        resolve(auraDoc);
-      } catch (mongoErr) {
-        reject(mongoErr);
-      }
-    });
+      const payload = diaries.map((d) => ({
+        text: d.content,
+        date: d.createdAt,
+      }));
 
-    extractor.on("error", (err) => {
-      reject(err);
-    });
+      // CORRECTED: Pointing to .js file and using Node.js execution
+      const extractorPath = path.join(
+        __dirname,
+        "../TextExtraction/Extractor.js"
+      );
+
+      // Use fork() for Node.js scripts
+      const extractorProcess = fork(extractorPath, [], {
+        env: { ...process.env },
+      });
+
+      let resultData = null;
+
+      // Send data via IPC
+      extractorProcess.send({ payload });
+
+      extractorProcess.on("message", (message) => {
+        if (message.result) {
+          resultData = message.result;
+        } else if (message.error) {
+          console.error("❌ [Aura] Extractor reported error:", message.error);
+        }
+      });
+
+      extractorProcess.on("close", async (code) => {
+        let finalPersonality = resultData;
+
+        if (code !== 0 || !finalPersonality) {
+          console.error(
+            `⚠️ [Aura] Extractor failed (Code ${code}). USING FALLBACK.`
+          );
+          finalPersonality = FALLBACK_PERSONALITY;
+        }
+
+        try {
+          const auraDoc = await Aura.findOneAndUpdate(
+            { userId },
+            { personality: finalPersonality },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+
+          resolve(auraDoc);
+        } catch (err) {
+          console.error("❌ [Aura] Database save failed:", err);
+          resolve(null);
+        }
+      });
+    } catch (err) {
+      console.error("❌ [Aura] Controller Error:", err);
+      resolve(null);
+    }
   });
-}
+};
 
 const createDiaryEntry = async (req, res) => {
-  const { title, content, userId } = req.body;
-  if (!title || !content || !userId) {
-    return res.status(400).json({ error: "Missing required fields" });
+  const userId = req.userId || req.body.userId;
+  const { title, content } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).json({ error: "Title and content are required" });
   }
 
-  let savedEntry;
   try {
-    savedEntry = await new Diary({ title, content, userId }).save();
+    const newEntry = new Diary({ userId, title, content });
+    const savedEntry = await newEntry.save();
+
+    triggerAuraUpdate(userId);
+
+    res.status(201).json({ diaryEntry: savedEntry });
   } catch (err) {
-    console.error("Error saving diary entry:", err);
-    return res.status(500).json({ error: "Failed to create diary entry" });
+    console.error("Error saving diary:", err);
+    res.status(500).json({ error: "Failed to save entry" });
   }
-
-  // 🔥 Fire-and-forget the aura update so it can't block the response
-  updateUserAura(userId)
-    .then((aura) => {
-      console.log("Aura successfully updated:", aura._id);
-    })
-    .catch((err) => {
-      console.error("Failed to update aura (but diary was saved):", err);
-    });
-
-  // ✅ Respond immediately with the saved diary
-  res.status(201).json({ diaryEntry: savedEntry });
 };
 
 const getDiaryEntries = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId || req.userId;
     const entries = await Diary.find({ userId }).sort({ createdAt: -1 });
     res.status(200).json(entries);
   } catch (error) {
-    console.error("Error fetching diary entries:", error);
-    res.status(500).json({ error: "Failed to fetch diary entries" });
+    console.error("Error fetching diaries:", error);
+    res.status(500).json({ error: "Failed to fetch entries" });
   }
 };
 
 module.exports = {
   createDiaryEntry,
   getDiaryEntries,
+  triggerAuraUpdate,
 };

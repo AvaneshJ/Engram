@@ -1,5 +1,5 @@
-// src/api/index.js
-const BASE_URL = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/diary`;
+const API =
+  import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || "http://localhost:5000";
 
 function getAuthHeader() {
   const token = localStorage.getItem("token");
@@ -7,18 +7,19 @@ function getAuthHeader() {
 }
 
 export const getDiaryEntries = async () => {
-  const res = await fetch(`${BASE_URL}`, {
+  const res = await fetch(`${API}/api/diary/`, {
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
       ...getAuthHeader(),
     },
   });
   if (!res.ok) throw new Error("Failed to fetch diary entries");
-  return res.json(); // returns an array of entries
+  return res.json();
 };
 
 export const createDiaryEntry = async ({ title, content }) => {
-  const res = await fetch(`${BASE_URL}/create`, {
+  const res = await fetch(`${API}/api/diary/create`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -26,9 +27,35 @@ export const createDiaryEntry = async ({ title, content }) => {
     },
     body: JSON.stringify({ title, content }),
   });
+
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Failed to create diary entry");
+    let errorMessage = "Failed to create diary entry";
+    try {
+      const err = await res.json();
+      errorMessage = err.error || errorMessage;
+    } catch (e) {}
+    throw new Error(errorMessage);
   }
-  return res.json(); // returns { diaryEntry: {...} }
+  return res.json();
+};
+
+export const deleteDiaryEntry = async (id) => {
+  const res = await fetch(`${API}/api/diary/delete/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    let errorMessage = "Failed to delete entry";
+    try {
+      const err = await res.json();
+      errorMessage = err.error || errorMessage;
+    } catch (e) {}
+    throw new Error(errorMessage);
+  }
+
+  return res.json();
 };

@@ -76,7 +76,7 @@ function callGroqChat(messages, apiKey) {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             try {
               const json = JSON.parse(data);
-              console.log("Groq respnse:", json);
+
               const content = json.choices[0].message.content.trim();
               return resolve(content);
             } catch (e) {

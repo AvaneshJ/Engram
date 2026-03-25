@@ -304,7 +304,7 @@ const DiaryApp = () => {
     <div className={`diary-app-container ${isDarkMode ? 'dark-mode' : 'light-mode'} ${isMobileView ? 'mobile-view' : ''}`}>
       <button
         className="page-back-button"
-        onClick={() => window.location.href = '/new_page'}
+        onClick={() => navigate('/new_page')}
         title="Go back"
         aria-label="Go back"
       >

@@ -87,6 +87,14 @@ body {
   transition: transform 0.3s ease;
 }
 
+.nav-button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+
 .nav-item:hover {
   transform: translateY(-2px);
 }
@@ -130,16 +138,18 @@ body {
 }
 
 .pattern-image {
-  min-width: 10%;
-  min-height: 10%;
-  width: auto;
-  height: auto;
-  object-fit: cover;
-  opacity: 0.8;
+  width: min(1200px, 95vw);
+  height: min(420px, 50vh);
+  opacity: 0.45;
   position: absolute;
   top: 25%;
   left: 50%;
   transform: translate(-50%, -50%);
+  background-image:
+    radial-gradient(circle at center, rgba(0, 0, 0, 0.12) 0.8px, transparent 1px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0));
+  background-size: 12px 12px, 100% 100%;
+  clip-path: polygon(3% 78%, 16% 50%, 27% 38%, 40% 28%, 54% 34%, 66% 52%, 78% 58%, 90% 72%, 99% 86%, 1% 86%);
 }
 
 .main-content {
@@ -227,6 +237,8 @@ body {
   transition: opacity 0.8s ease, transform 0.8s ease;
   margin-top: 275px;
   margin-bottom: 275px;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 900px;
 }
 
 .section-two {
@@ -334,6 +346,8 @@ body {
   opacity: 0;
   transform: translateY(30px);
   transition: all 0.8s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 700px;
 }
 
 .faq-section.visible {
@@ -708,5 +722,15 @@ body {
 
   .faq-question {
     font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }

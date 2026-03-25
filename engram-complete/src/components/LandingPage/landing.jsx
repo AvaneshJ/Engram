@@ -1,11 +1,51 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import "./LandingPage.css";
-import dotPattern from "./assets/Logo.svg";
 import diary from "./assets/Diary.jpg";
 import review from "./assets/review.jpg";
 import OCEAN from "./assets/OCEAN.jpg";
 
+function LazyImage({ src, alt, className, eager = false }) {
+  const imageRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(eager);
+
+  useEffect(() => {
+    if (eager || !imageRef.current || typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { rootMargin: "220px 0px" }
+    );
+
+    observer.observe(imageRef.current);
+    return () => observer.disconnect();
+  }, [eager]);
+
+  return (
+    <img
+      ref={imageRef}
+      src={isVisible ? src : undefined}
+      alt={alt}
+      className={className}
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      fetchPriority={eager ? "high" : "low"}
+    />
+  );
+}
+
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const sectionOneRef = useRef(null);
@@ -14,7 +54,7 @@ export default function LandingPage() {
   const faqSectionRef = useRef(null);
 
   useEffect(() => {
-    setTimeout(() => {
+    const loadTimer = window.setTimeout(() => {
       setIsLoaded(true);
     }, 300);
 
@@ -39,6 +79,7 @@ export default function LandingPage() {
     if (faqSectionRef.current) sectionObserver.observe(faqSectionRef.current);
 
     return () => {
+      window.clearTimeout(loadTimer);
       if (sectionOneRef.current)
         sectionObserver.unobserve(sectionOneRef.current);
       if (sectionTwoRef.current)
@@ -98,17 +139,14 @@ export default function LandingPage() {
         <div className="logo">Engram</div>
         <nav className="navigation">
           <div className="nav-item">Process</div>
-          <div
-            className="nav-item"
-            onClick={() => (window.location.href = "/auth")}
-          >
+          <button className="nav-item nav-button" onClick={() => navigate("/auth")}>
             Signup
-          </div>
+          </button>
         </nav>
       </header>
 
       <div className="background-patterns">
-        <img src={dotPattern} alt="dotpattern" className="pattern-image" />
+        <div className="pattern-image" aria-hidden="true" />
       </div>
 
       <main className="main-content">
@@ -116,7 +154,7 @@ export default function LandingPage() {
         <p className="subheadline">Replicate your digital self.</p>
         <button
           className="cta-button"
-          onClick={() => (window.location.href = "/auth")}
+          onClick={() => navigate("/auth")}
         >
           Free – Start Now
         </button>
@@ -125,7 +163,7 @@ export default function LandingPage() {
       <section className="concept-section section-one" ref={sectionOneRef}>
         <div className="concept-cards">
           <div className="concept-card">
-            <img src={diary} alt="diary" className="card-image" />
+            <LazyImage src={diary} alt="diary" className="card-image" />
           </div>
         </div>
 
@@ -153,7 +191,7 @@ export default function LandingPage() {
 
         <div className="concept-cards">
           <div className="concept-card">
-            <img
+            <LazyImage
               src={OCEAN}
               alt="OCEAN personality model"
               className="card-image"
@@ -165,7 +203,7 @@ export default function LandingPage() {
       <section className="concept-section section-three" ref={sectionThreeRef}>
         <div className="concept-cards">
           <div className="concept-card">
-            <img src={review} alt="Test and review" className="card-image" />
+            <LazyImage src={review} alt="Test and review" className="card-image" />
           </div>
         </div>
 
@@ -213,7 +251,7 @@ export default function LandingPage() {
           </div>
           <button
             className="footer-cta"
-            onClick={() => (window.location.href = "/auth")}
+            onClick={() => navigate("/auth")}
           >
             Free – Start Now
           </button>

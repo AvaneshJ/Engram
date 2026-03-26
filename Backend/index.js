@@ -8,6 +8,7 @@ const auraRoutes = require("./routes/auraRoute");
 const reviewRoutes = require("./routes/review");
 const accuracyRoutes = require("./routes/accuracy");
 const chatRoutes = require("./routes/chat");
+const sessionRoutes = require("./routes/sessionRoute");
 
 const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL }));
@@ -23,6 +24,7 @@ app.use("/api/aura", auraRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/accuracy", accuracyRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/sessions", sessionRoutes);
 
 const PORT = 5000;
 app.listen(PORT);

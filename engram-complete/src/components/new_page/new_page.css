@@ -2,7 +2,7 @@
 
 @font-face {
     font-family: 'CustomFont';
-    src: url('../assets/Dune_Rise.ttf') format('truetype');
+    src: url('/fonts/Dune_Rise.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;

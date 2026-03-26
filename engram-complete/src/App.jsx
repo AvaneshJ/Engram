@@ -19,12 +19,13 @@ const App = () => {
     <div className="main-app-container">
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<NewPage />} />
+          {/* <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/new_page" element={<NewPage />} />
           <Route path="/chat" element={<ChatInterface />} />
           <Route path="/diary" element={<DiaryApp />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} /> */}
         </Routes>
       </Suspense>
     </div>

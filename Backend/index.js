@@ -18,7 +18,10 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.log("❌ MongoDB connection error:", err));
-
+// Simple route to check if the server is alive
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "Engram API is running successfully! 🚀" });
+});
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/diary", diaryRoutes);

@@ -1,60 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import "./LandingPage.css";
+import dotPattern from "./assets/Logo.svg";
 import diary from "./assets/Diary.jpg";
 import review from "./assets/review.jpg";
 import OCEAN from "./assets/OCEAN.jpg";
 
-function LazyImage({ src, alt, className, eager = false }) {
-  const imageRef = useRef(null);
-  const [isVisible, setIsVisible] = useState(eager);
-
-  useEffect(() => {
-    if (eager || !imageRef.current || typeof IntersectionObserver === "undefined") {
-      setIsVisible(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            observer.disconnect();
-          }
-        });
-      },
-      { rootMargin: "220px 0px" }
-    );
-
-    observer.observe(imageRef.current);
-    return () => observer.disconnect();
-  }, [eager]);
-
-  return (
-    <img
-      ref={imageRef}
-      src={isVisible ? src : undefined}
-      alt={alt}
-      className={className}
-      loading={eager ? "eager" : "lazy"}
-      decoding="async"
-      fetchPriority={eager ? "high" : "low"}
-    />
-  );
-}
-
 export default function LandingPage() {
-  const navigate = useNavigate();
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const sectionOneRef = useRef(null);
   const sectionTwoRef = useRef(null);
   const sectionThreeRef = useRef(null);
   const faqSectionRef = useRef(null);
+  const featuresRef = useRef(null);
+  const ctaRef = useRef(null);
 
   useEffect(() => {
-    const loadTimer = window.setTimeout(() => {
+    setTimeout(() => {
       setIsLoaded(true);
     }, 300);
 
@@ -77,9 +39,10 @@ export default function LandingPage() {
     if (sectionThreeRef.current)
       sectionObserver.observe(sectionThreeRef.current);
     if (faqSectionRef.current) sectionObserver.observe(faqSectionRef.current);
+    if (featuresRef.current) sectionObserver.observe(featuresRef.current);
+    if (ctaRef.current) sectionObserver.observe(ctaRef.current);
 
     return () => {
-      window.clearTimeout(loadTimer);
       if (sectionOneRef.current)
         sectionObserver.unobserve(sectionOneRef.current);
       if (sectionTwoRef.current)
@@ -88,6 +51,10 @@ export default function LandingPage() {
         sectionObserver.unobserve(sectionThreeRef.current);
       if (faqSectionRef.current)
         sectionObserver.unobserve(faqSectionRef.current);
+      if (featuresRef.current)
+        sectionObserver.unobserve(featuresRef.current);
+      if (ctaRef.current)
+        sectionObserver.unobserve(ctaRef.current);
     };
   }, []);
 
@@ -97,39 +64,39 @@ export default function LandingPage() {
 
   const faqItems = [
     {
-      question: "What's the process after I write the diary?",
+      question: "What happens after I submit my personal documentation?",
       answer:
-        "After you write your diary, we store and extract important details from it. Our AI model then learns from this data to create a digital replica of you.",
+        "Your reflections are processed through our proprietary AI engine, which extracts behavioral insights and personality markers. This data is Then analyzed using the OCEAN framework to construct your comprehensive digital profile.",
     },
     {
-      question: "How will my final digital version be usable?",
+      question: "How will I access and interact with my digital companion?",
       answer:
-        "Your final digital replica will be delivered through the a seperate page, where you can test and interact with it",
+        "Your personalized AI companion is delivered through a dedicated interface where you can engage in natural conversations, test its understanding of your perspective, and validate its authenticity against your expectations.",
     },
     {
-      question: "Can I upgrade my digital version?",
+      question: "Can I enhance my digital companion over time?",
       answer:
-        "Yes, you can upgrade your digital version at any time. We will offer different tiers of service with additional features and capabilities that can be added as-per your needs.",
+        "Absolutely. We are planning to add tiered enhancement packages that expand your companion's capabilities, add specialized knowledge domains, and refine behavioral accuracy based on your evolving needs.",
     },
     {
-      question: "Do I get full ownership of my personality?",
+      question: "Do I retain complete ownership of my digital identity?",
       answer:
-        "Yes, you retain full ownership of your digital replica. We provide you with complete access and control over how it's used and implemented.",
+        "Yes. You maintain full intellectual property rights over your digital companion. Engram serves as the steward of your data, providing secure access and control over deployment and usage parameters.",
     },
     {
-      question: "What are your payment methods?",
+      question: "What payment and subscription options are available?",
       answer:
-        "We will accept all major credit cards, UPI, and bank transfers. Payment plans are currently under developement for our premium packages.",
+        "We are still in the process to add major payment methods including credit cards, UPI, and bank transfers. Flexible subscription tiers will be available to accommodate both individual users and enterprise implementations.",
     },
     {
-      question: "Can I request a deletion?",
+      question: "What happens if I decide to discontinue the service?",
       answer:
-        "We offer a persona delete option. If you're not happy with our service, or want to delete your data you can request a deletion , subject to our terms and conditions.",
+        "You maintain the right to request complete data deletion at any time. We provide a seamless offboarding process that ensures your digital identity is either retained under your control or completely removed, subject to our service agreement.",
     },
     {
-      question: "I have more questions!",
+      question: "Still have questions?",
       answer:
-        "Feel free to contact us at justin.cider.dm@gmail.com, and our team will be happy to assist you with any additional questions or concerns you may have.",
+        "Our specialist team is available to address any inquiries. Contact us at justin.cider.dm@gmail.com and we'll provide comprehensive guidance tailored to your specific requirements.",
     },
   ];
 
@@ -138,60 +105,61 @@ export default function LandingPage() {
       <header className="main-header">
         <div className="logo">Engram</div>
         <nav className="navigation">
-          <div className="nav-item">Process</div>
-          <button className="nav-item nav-button" onClick={() => navigate("/auth")}>
+          <div className="nav-item" onClick={() => sectionOneRef.current?.scrollIntoView({ behavior: "smooth" })}>Process</div>
+          <div
+            className="nav-item"
+            onClick={() => (window.location.href = "/auth")}
+          >
             Signup
-          </button>
+          </div>
         </nav>
       </header>
 
       <div className="background-patterns">
-        <div className="pattern-image" aria-hidden="true" />
+        <img src={dotPattern} alt="dotpattern" className="pattern-image" />
       </div>
 
       <main className="main-content">
         <h1 className="headline">Engram</h1>
-        <p className="subheadline">Replicate your digital self.</p>
+        <p className="sub-description">
+          Create a personalized AI companion that authentically captures your unique identity and intellectual essence.
+        </p>
         <button
           className="cta-button"
-          onClick={() => navigate("/auth")}
+          onClick={() => (window.location.href = "/auth")}
         >
           Free – Start Now
         </button>
       </main>
 
-      <section className="concept-section section-one" ref={sectionOneRef}>
+      <section className="concept-section section-one" ref={sectionOneRef} style={{ marginTop: "80px" }}>
         <div className="concept-cards">
           <div className="concept-card">
-            <LazyImage src={diary} alt="diary" className="card-image" />
+            <img src={diary} alt="diary" className="card-image" />
           </div>
         </div>
 
         <div className="concept-header">
-          <span className="concept-number">1. Daily Diary.</span>
-          <h2 className="concept-title">Writing daily diary</h2>
+          <span className="concept-number">1. Personal Documentation</span>
+          <h2 className="concept-title">Chronicle Your Essence</h2>
           <p className="concept-description">
-            Keep a record of your daily thoughts, feelings, and experiences.
-            This helps in self-reflection and personal growth. We collect
-            personality data from your diary and use it to create a digital twin
-            of you.
+            Document your thoughts, insights, and experiences through daily reflections. This foundational step enables our advanced AI to extract meaningful personality signals and behavioral patterns that form the core of your digital representation.
           </p>
         </div>
       </section>
 
       <section className="concept-section section-two" ref={sectionTwoRef}>
         <div className="concept-header">
-          <span className="concept-number">2. Text extraction.</span>
-          <h2 className="concept-title">The OCEAN format</h2>
+          <span className="concept-number">2. Cognitive Analysis</span>
+          <h2 className="concept-title">OCEAN Personality Framework</h2>
           <p className="concept-description">
-            The AI model then extracts the text and learns from it. It uses the
-            OCEAN format to understand your personality traits.
+            Our proprietary AI leverages the scientifically validated OCEAN model to analyze your psychological profile. We measure Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism to construct a comprehensive understanding of your unique personality architecture.
           </p>
         </div>
 
         <div className="concept-cards">
           <div className="concept-card">
-            <LazyImage
+            <img
               src={OCEAN}
               alt="OCEAN personality model"
               className="card-image"
@@ -203,17 +171,15 @@ export default function LandingPage() {
       <section className="concept-section section-three" ref={sectionThreeRef}>
         <div className="concept-cards">
           <div className="concept-card">
-            <LazyImage src={review} alt="Test and review" className="card-image" />
+            <img src={review} alt="Test and review" className="card-image" />
           </div>
         </div>
 
         <div className="concept-header">
-          <span className="concept-number">3. Test and review.</span>
-          <h2 className="concept-title">Test the replica and review</h2>
+          <span className="concept-number">3. Refinement & Deployment</span>
+          <h2 className="concept-title">Validate & Optimize Your Digital Identity</h2>
           <p className="concept-description">
-            Test the replica and review the results. This helps in understanding
-            how well the AI model has learned from your data. You can also
-            provide feedback to improve the model's accuracy.
+            Interact with your AI companion and refine its behavioral patterns. Our iterative validation process ensures your digital representation captures the nuances of your personality with exceptional accuracy, delivering an authentic reflection you can deploy with confidence.
           </p>
         </div>
       </section>
@@ -248,10 +214,12 @@ export default function LandingPage() {
           <div className="footer-brand">Engram</div>
           <div className="footer-links">
             <div className="footer-link">Support</div>
+            <div className="footer-link">Privacy Policy</div>
+            <div className="footer-link">Terms of Service</div>
           </div>
           <button
             className="footer-cta"
-            onClick={() => navigate("/auth")}
+            onClick={() => (window.location.href = "/auth")}
           >
             Free – Start Now
           </button>

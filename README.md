@@ -109,11 +109,5 @@ In the project root:
 - **Frontend script missing**: Ensure `"start"` exists in `engram-complete/package.json`.
 
 ## 📄 License
+The project comes under MIT License.
 
-This project is open-source and free to use for educational and non-commercial purposes.
-
----
-
-## ❤️ Credits
-
-Built with LLaMA 3.

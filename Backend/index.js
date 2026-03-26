@@ -8,14 +8,16 @@ const auraRoutes = require("./routes/auraRoute");
 const reviewRoutes = require("./routes/review");
 const accuracyRoutes = require("./routes/accuracy");
 const chatRoutes = require("./routes/chat");
-const sessionRoutes = require("./routes/sessionRoute");
 
 const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(express.json());
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI);
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.log("❌ MongoDB connection error:", err));
 
 // Routes
 app.use("/api/users", userRoutes);
@@ -24,7 +26,6 @@ app.use("/api/aura", auraRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/accuracy", accuracyRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api/sessions", sessionRoutes);
 
 const PORT = 5000;
-app.listen(PORT);
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

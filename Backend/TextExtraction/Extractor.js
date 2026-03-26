@@ -20,6 +20,9 @@ async function loadEntries() {
     // A. Listener for Parent Process (Controller)
     process.on("message", (message) => {
       if (message && message.payload) {
+        console.log(
+          `✅ [Extractor] Received ${message.payload.length} entries via IPC.`,
+        );
         resolve(message.payload);
       } else {
         console.error("❌ [Extractor] Received message but no payload.");
@@ -100,7 +103,7 @@ async function extract(apiKey, payload) {
       res.on("end", () => {
         if (res.statusCode !== 200) {
           return reject(
-            new Error(`Groq API Error: ${res.statusCode} - ${data}`)
+            new Error(`Groq API Error: ${res.statusCode} - ${data}`),
           );
         }
         try {
@@ -161,6 +164,8 @@ function mergeData(prev, neu) {
     // 3. Send back to Parent (Controller)
     if (process.send) {
       process.send({ result: neu });
+    } else {
+      console.log(JSON.stringify(neu, null, 2));
     }
 
     process.exit(0);

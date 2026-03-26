@@ -1,5 +1,5 @@
 // models/Diary.js
-
+console.log("this works");
 const mongoose = require("mongoose");
 
 const diarySchema = new mongoose.Schema(
@@ -18,7 +18,9 @@ const diarySchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Diary", diarySchema);
+
+console.log("this works");

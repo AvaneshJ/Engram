@@ -9,6 +9,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const navigate = useNavigate();
 
   const clearMessage = () => {
@@ -25,6 +27,8 @@ const Auth = () => {
       setMessageType("error");
       return;
     }
+
+    setIsSigningUp(true);
 
     try {
       const res = await fetch(
@@ -52,6 +56,8 @@ const Auth = () => {
       console.error("Sign up error:", err);
       setMessage("An error occurred during registration.");
       setMessageType("error");
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
@@ -64,6 +70,8 @@ const Auth = () => {
       setMessageType("error");
       return;
     }
+
+    setIsSigningIn(true);
 
     try {
       const response = await fetch(
@@ -88,6 +96,8 @@ const Auth = () => {
       console.error("Error logging in:", error);
       setMessage("An error occurred while logging in.");
       setMessageType("error");
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -122,7 +132,15 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <button type="submit" className="auth-btn">Sign Up</button>
+            <button
+              type="submit"
+              className={`auth-btn ${isSigningUp ? "loading" : ""}`}
+              disabled={isSigningUp}
+              aria-busy={isSigningUp}
+            >
+              {isSigningUp && <span className="btn-spinner" aria-hidden="true" />}
+              {isSigningUp ? "Signing Up..." : "Sign Up"}
+            </button>
             <div className="mobile-toggle">
               <p>Already have an account?</p>
               <button
@@ -156,8 +174,15 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <a href="#" className="forgot-password">Forgot your password?</a>
-            <button type="submit" className="auth-btn">Sign In</button>
+            <button
+              type="submit"
+              className={`auth-btn ${isSigningIn ? "loading" : ""}`}
+              disabled={isSigningIn}
+              aria-busy={isSigningIn}
+            >
+              {isSigningIn && <span className="btn-spinner" aria-hidden="true" />}
+              {isSigningIn ? "Signing In..." : "Sign In"}
+            </button>
             <div className="mobile-toggle">
               <p>Don't have an account?</p>
               <button
@@ -174,8 +199,8 @@ const Auth = () => {
         <div className={`overlay-container ${!signIn ? "right-panel-active" : ""}`}>
           <div className="overlay">
             <div className="overlay-panel overlay-left">
-              <h1 className="overlay-title">Welcome Back</h1>
-              <p>Access your Engram account and continue your journey</p>
+              <h1 className="overlay-title">Hello!</h1>
+              <p>Enter your details and start your journey with Engram</p>
               <button
                 className="auth-btn ghost"
                 onClick={() => { clearMessage(); toggle(true); }}
@@ -185,8 +210,8 @@ const Auth = () => {
             </div>
 
             <div className="overlay-panel overlay-right">
-              <h1 className="overlay-title">Hello, Friend!</h1>
-              <p>Enter your details and start your journey with Engram</p>
+              <h1 className="overlay-title">Welcome Back</h1>
+              <p>Access your Engram account and continue your journey</p>
               <button
                 className="auth-btn ghost"
                 onClick={() => { clearMessage(); toggle(false); }}

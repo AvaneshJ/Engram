@@ -34,16 +34,16 @@ function callGroqJSON(messages, apiKey) {
               return resolve(parsed);
             } catch (e) {
               return reject(
-                new Error("Failed to parse Groq JSON: " + e.message)
+                new Error("Failed to parse Groq JSON: " + e.message),
               );
             }
           } else {
             return reject(
-              new Error(`Groq API error ${res.statusCode}: ${data}`)
+              new Error(`Groq API error ${res.statusCode}: ${data}`),
             );
           }
         });
-      }
+      },
     );
     req.on("error", reject);
     req.write(payload);
@@ -76,21 +76,21 @@ function callGroqChat(messages, apiKey) {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             try {
               const json = JSON.parse(data);
-
+              console.log("Groq respnse:", json);
               const content = json.choices[0].message.content.trim();
               return resolve(content);
             } catch (e) {
               return reject(
-                new Error("Groq response not valid JSON: " + e.message)
+                new Error("Groq response not valid JSON: " + e.message),
               );
             }
           } else {
             return reject(
-              new Error(`Groq API error ${res.statusCode}: ${data}`)
+              new Error(`Groq API error ${res.statusCode}: ${data}`),
             );
           }
         });
-      }
+      },
     );
     req.on("error", reject);
     req.write(payload);

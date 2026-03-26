@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ChatInterface.css";
-
 const ChatInterface = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -10,12 +9,6 @@ const ChatInterface = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [error, setError] = useState(null);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [activeSessionId, setActiveSessionId] = useState(null);
-
-  // NEW: State for mobile sidebar toggle
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
@@ -34,16 +27,17 @@ const ChatInterface = () => {
 
   const baseUrl = getBaseUrl();
   const [accuracy, setAccuracy] = useState({ overallScore: 0.85 });
-  const [copiedIndex, setCopiedIndex] = useState(null);
 
   // 1. FETCH REAL PERSONALITY FROM BACKEND
   useEffect(() => {
     const fetchUserPersonality = async () => {
+      // Get token directly inside the effect to ensure it's fresh on mount
       const token = localStorage.getItem("token");
 
       if (!token) {
         console.warn("No token found. Redirecting to auth...");
         setError("You are not logged in. Redirecting...");
+        // Redirect to auth page after a brief delay
         setTimeout(() => navigate("/auth"), 1500);
         return;
       }
@@ -57,6 +51,7 @@ const ChatInterface = () => {
           },
         });
 
+        // Guard against HTML errors
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") === -1) {
           throw new Error("Server returned HTML. Check backend connection.");
@@ -91,7 +86,7 @@ const ChatInterface = () => {
     };
 
     fetchUserPersonality();
-  }, [baseUrl, navigate]);
+  }, [baseUrl, navigate]); // Dependency array ensures this runs on mount
 
   // Auto-scroll
   useEffect(() => {
@@ -107,27 +102,6 @@ const ChatInterface = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   };
-  // Fetch chat history from MongoDB on mount
-  useEffect(() => {
-    const fetchHistory = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      try {
-        const response = await fetch(`${baseUrl}/api/sessions`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json();
-        if (response.ok) {
-          setChatHistory(data.sessions || []);
-        }
-      } catch (err) {
-        console.error("Failed to load chat history:", err);
-      }
-    };
-
-    fetchHistory();
-  }, [baseUrl]);
 
   const sendMessage = async () => {
     if (showWelcome) {
@@ -135,11 +109,7 @@ const ChatInterface = () => {
     }
     if (input.trim() === "" || !personality) return;
 
-    // Capture the exact input before clearing it
-    const userText = input;
-    const userMessage = { role: "user", content: userText };
-
-    // Optimistically update the UI so it feels instant
+    const userMessage = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
@@ -150,96 +120,45 @@ const ChatInterface = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // --- 1. GET AI RESPONSE ---
-      const chatResponse = await fetch(`${baseUrl}/api/chat/send`, {
+      const response = await fetch(`${baseUrl}/api/chat/send`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userMessage: userText,
+          userMessage: input,
           history: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
-      if (!chatResponse.ok) {
-        const errorData = await chatResponse.json();
-        throw new Error(errorData.error || "Failed to get AI response");
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") === -1) {
+        throw new Error("Server Error: Received HTML instead of JSON.");
       }
 
-      const chatData = await chatResponse.json();
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get response");
+      }
+
       const botMessage = {
         role: "assistant",
-        content: chatData.assistantMessage,
+        content: data.assistantMessage,
       };
-
-      // Create the combined array of the entire conversation up to this point
-      const updatedMessages = [...messages, userMessage, botMessage];
-
-      // Update the screen with the AI's reply
-      setMessages(updatedMessages);
-
-      // --- 2. SYNC WITH MONGODB ---
-      const currentTokens = updatedMessages.length * 12;
-
-      if (!activeSessionId) {
-        // SCENARIO A: Brand New Conversation -> POST
-        const title =
-          userText.substring(0, 22) + (userText.length > 22 ? "..." : "");
-
-        const dbResponse = await fetch(`${baseUrl}/api/sessions`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: title,
-            messages: updatedMessages,
-            tokens: currentTokens,
-          }),
-        });
-
-        if (dbResponse.ok) {
-          const savedSession = await dbResponse.json();
-          setActiveSessionId(savedSession._id); // Lock the frontend into this new Mongo document
-          setChatHistory((prev) => [savedSession, ...prev]); // Add it to the sidebar
-        }
-      } else {
-        // SCENARIO B: Existing Conversation -> PUT
-        const dbResponse = await fetch(
-          `${baseUrl}/api/sessions/${activeSessionId}`,
-          {
-            method: "PUT",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              messages: updatedMessages,
-              tokens: currentTokens,
-            }),
-          },
-        );
-
-        if (dbResponse.ok) {
-          const updatedSession = await dbResponse.json();
-          // Silently update the specific session's token count and messages in the sidebar state
-          setChatHistory((prev) =>
-            prev.map((session) =>
-              session._id === activeSessionId ? updatedSession : session,
-            ),
-          );
-        }
-      }
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error("Error during chat or DB save:", error);
+      console.error("Error fetching AI response:", error);
+      setError(null);
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `I'm sorry, I'm having trouble connecting to my thoughts right now. (${error.message})`,
+          content:
+            "I'm sorry, I'm having trouble connecting to my thoughts right now. (" +
+            error.message +
+            ")",
         },
       ]);
     } finally {
@@ -247,6 +166,7 @@ const ChatInterface = () => {
       setTimeout(() => scrollToBottom(), 100);
     }
   };
+
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -254,38 +174,20 @@ const ChatInterface = () => {
     }
   };
 
-  const deleteConversation = async (e, sessionId) => {
-    e.stopPropagation();
-    setChatHistory((prev) =>
-      prev.filter((session) => session._id !== sessionId),
-    );
-    if (activeSessionId === sessionId) {
-      setMessages([]);
-      setInput("");
-      setShowWelcome(true);
-      setActiveSessionId(null);
-    }
-    try {
-      const token = localStorage.getItem("token");
-      await fetch(`${baseUrl}/api/sessions/${sessionId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch (err) {
-      console.error("Failed to delete the session id", err);
-    }
-  };
-
-  const copyToClipboard = async (text, index) => {
+  const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedIndex(index);
-      setTimeout(() => {
-        setCopiedIndex(null);
-      }, 2000);
     } catch (err) {
       console.error("Failed to copy text: ", err);
     }
+  };
+
+  const handleThumbsUp = (messageIndex) => {
+    console.log(`Thumbs up for message ${messageIndex}`);
+  };
+
+  const handleThumbsDown = (messageIndex) => {
+    console.log(`Thumbs down for message ${messageIndex}`);
   };
 
   const toggleTheme = () => {
@@ -295,7 +197,7 @@ const ChatInterface = () => {
   // 3. ERROR HANDLING UI
   if (error && !personality) {
     return (
-      <div className={`app-container ${isDarkMode ? "dark" : "light"}`}>
+      <div className={`chat-container ${isDarkMode ? "dark" : "light"}`}>
         <div className="error-message">
           <h3>Status Update</h3>
           <p>{error}</p>
@@ -303,14 +205,14 @@ const ChatInterface = () => {
             {error.includes("logged in") || error.includes("Session") ? (
               <button
                 onClick={() => navigate("/auth")}
-                className="action-btn-primary"
+                className="action-button"
               >
                 Login
               </button>
             ) : (
               <button
                 onClick={() => window.location.reload()}
-                className="action-btn-primary"
+                className="action-button"
               >
                 Retry Sync
               </button>
@@ -323,171 +225,25 @@ const ChatInterface = () => {
 
   if (!personality) {
     return (
-      <div className={`app-container ${isDarkMode ? "dark" : "light"}`}>
+      <div className={`chat-container ${isDarkMode ? "dark" : "light"}`}>
         <div className="loading-message">Loading personality...</div>
       </div>
     );
   }
 
-  const startNewConversation = () => {
-    // 1. Clear the screen
-    setMessages([]);
-    setInput("");
-    setShowWelcome(true);
-    setError(null);
-    setCopiedIndex(null);
-    setIsSidebarOpen(false);
-
-    // 2. CRITICAL FIX: Tell the app we are no longer in the old database session
-    setActiveSessionId(null);
-  };
-
-  const loadConversation = (sessionToLoad) => {
-    // Load the clicked session's data from MongoDB into the main view
-    setMessages(sessionToLoad.messages || []);
-
-    // Lock the app into this old session's MongoDB ID
-    setActiveSessionId(sessionToLoad._id);
-
-    setShowWelcome(false);
-    setIsSidebarOpen(false); // Close sidebar on mobile
-  };
-
   return (
-    <div className={`app-container ${isDarkMode ? "dark" : "light"}`}>
-      {/* Mobile Sidebar Overlay */}
-      <div
-        className={`sidebar-overlay ${isSidebarOpen ? "visible" : ""}`}
-        onClick={() => setIsSidebarOpen(false)}
-      ></div>
-
-      {/* Sidebar - Dynamic class added for mobile toggle */}
-      <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
-        <div className="sidebar-header">
-          <h2>Conversations</h2>
-          <div className="sidebar-icons">
-            {/* Close button for mobile */}
-            <button
-              className="mobile-close-btn"
-              onClick={() => setIsSidebarOpen(false)}
-            >
+    <div className={`chat-container ${isDarkMode ? "dark" : "light"}`}>
+      <header className="chat-header">
+        <div className="logo">Engram</div>
+        <div className="header-buttons">
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {isDarkMode ? (
               <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div className="sidebar-content">
-          {/* Only show "New Session" if we are in a fresh, unsaved chat */}
-          {!activeSessionId && (
-            <div className="history-item active">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <div className="history-details">
-                <span className="history-title">New Session</span>
-                <span className="history-tokens">
-                  {messages.length * 12} Tokens
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Map through the saved history from MongoDB */}
-          {/* Map through the saved history from MongoDB */}
-          {chatHistory.map((session) => (
-            <div
-              key={session._id}
-              className={`history-item ${activeSessionId === session._id ? "active" : ""}`}
-              onClick={() => loadConversation(session)}
-            >
-              <div
-                className="history-left"
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  alignItems: "flex-start",
-                }}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  style={{ marginTop: "2px" }}
-                >
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                <div className="history-details">
-                  <span className="history-title">{session.title}</span>
-                  <span className="history-tokens">
-                    {session.tokens} Tokens
-                  </span>
-                </div>
-              </div>
-
-              {/* NEW: The Delete Button */}
-              <button
-                className="delete-session-btn"
-                onClick={(e) => deleteConversation(e, session._id)}
-                title="Delete Chat"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-              </button>
-            </div>
-          ))}
-
-          <button className="new-chat-btn" onClick={startNewConversation}>
-            <span>+ New Conversation</span>
-          </button>
-        </div>
-        <div className="sidebar-footer">
-          <p className="accuracy-text">
-            Accuracy: {(accuracy.overallScore * 100).toFixed(1)}%
-          </p>
-        </div>
-      </aside>
-
-      {/* Main Chat Area */}
-      <main className="main-chat">
-        {/* Top Navigation Bar */}
-        <header className="top-bar">
-          <div className="top-bar-left">
-            {/* Hamburger Menu Button */}
-            <button
-              className="hamburger-btn icon-btn"
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <svg
+                xmlns="http://www.w3.org/2000/svg"
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
@@ -495,218 +251,187 @@ const ChatInterface = () => {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
               </svg>
-            </button>
-            <div className=" active-model">Engram </div>
-          </div>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </header>
 
-          <div className="top-bar-right">
-            <button
-              className="icon-btn"
-              onClick={toggleTheme}
-              title="Toggle Theme"
-            >
-              {isDarkMode ? (
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" />
-                  <line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" />
-                  <line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </header>
-
-        {/* Chat Messages */}
-        <div className="chat-scroll-area">
-          <div className="chat-messages">
-            {messages.length === 0 && showWelcome && (
-              <div className="empty-state">
-                <h1 className="welcome-title">Engram</h1>
-                <p className="welcome-subtitle">
-                  Your personalized minimal AI companion
-                </p>
-                <div className="trait-chips">
-                  <span className="chip">
-                    O: {personality.Openness?.Description?.substring(0, 10)}...
+      <div className="chat-content">
+        {messages.length === 0 && showWelcome && (
+          <div className="welcome-message">
+            <div className="welcome-content">
+              <h1 className="welcome-title">Welcome to Engram</h1>
+              <p className="welcome-subtitle">
+                Your AI-powered personality companion
+              </p>
+              <p className="welcome-description">
+                Start a conversation to explore insights based on personal diary
+                entries
+              </p>
+              <div className="welcome-badges">
+                <div className="badge">
+                  <span>
+                    Openness:{" "}
+                    {personality.Openness?.Description?.substring(0, 15)}...
                   </span>
-                  <span className="chip">
-                    C:{" "}
+                </div>
+                <div className="badge">
+                  <span>
+                    Conscientiousness:{" "}
                     {personality.Conscientiousness?.Description?.substring(
                       0,
-                      10,
+                      15,
                     )}
                     ...
                   </span>
-                  <span className="chip">
-                    E: {personality.Extraversion?.Description?.substring(0, 10)}
-                    ...
+                </div>
+                <div className="badge">
+                  <span>
+                    Extraversion:{" "}
+                    {personality.Extraversion?.Description?.substring(0, 15)}...
                   </span>
                 </div>
               </div>
-            )}
-
-            {messages.map((message, index) => (
-              <div key={index} className={`message-wrapper ${message.role}`}>
-                <div className="message-card">
-                  {/* AI Header */}
-                  {message.role === "assistant" && (
-                    <div className="message-header">
-                      <span className="model-tag">
-                        engram/personality-model
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="message-content">{message.content}</div>
-
-                  {/* Action Buttons - NOW RESTRICTED TO AI ONLY */}
-                  {message.role === "assistant" && (
-                    <div className="message-actions">
-                      <button className="action-icon" title="Thumbs up">
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"></path>
-                          <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                        </svg>
-                      </button>
-
-                      <button
-                        onClick={() => copyToClipboard(message.content, index)}
-                        className="action-icon"
-                        title="Copy text"
-                      >
-                        {copiedIndex === index ? (
-                          /* Checkmark Icon */
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        ) : (
-                          /* Standard Copy Icon */
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <rect
-                              x="9"
-                              y="9"
-                              width="13"
-                              height="13"
-                              rx="2"
-                              ry="2"
-                            ></rect>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {loading && (
-              <div className="message-wrapper assistant">
-                <div className="message-card">
-                  <div className="message-header">
-                    <span className="model-tag">
-                      engram/personality-model:thinking
-                    </span>
-                  </div>
-                  <div className="thinking-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} className="messages-end" />
-          </div>
-        </div>
-
-        {/* Floating Input Area */}
-        <div className="floating-input-wrapper">
-          <div className="input-box">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter a message..."
-              rows="1"
-              onKeyDown={handleKeyPress}
-            />
-            <div className="input-controls">
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim() || loading}
-                className={`send-btn ${!input.trim() || loading ? "disabled" : ""}`}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <line x1="12" y1="19" x2="12" y2="5"></line>
-                  <polyline points="5 12 12 5 19 12"></polyline>
-                </svg>
-              </button>
             </div>
           </div>
+        )}
+
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`message ${
+              message.role === "assistant"
+                ? "assistant-message"
+                : "user-message"
+            }`}
+          >
+            <div className="message-content">{message.content}</div>
+            {message.role === "assistant" && (
+              <div className="message-actions">
+                <button
+                  onClick={() => handleThumbsUp(index)}
+                  className="action-button"
+                  title="Thumbs up"
+                >
+                  <svg
+                    width="24px"
+                    height="24px"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      fill={isDarkMode ? "#e5e7eb" : "#374151"}
+                      d="M12.596 2.043c-1.301-.092-2.303.986-2.303 2.206v1.053c0 2.666-1.813 3.785-2.774 4.2a1.866 1.866 0 01-.523.131A1.75 1.75 0 005.25 8h-1.5A1.75 1.75 0 002 9.75v10.5c0 .967.784 1.75 1.75 1.75h1.5a1.75 1.75 0 001.742-1.58c.838.06 1.667.296 2.69.586l.602.17c1.464.406 3.213.824 5.544.824 2.188 0 3.693-.204 4.583-1.372.422-.554.65-1.255.816-2.05.148-.708.262-1.57.396-2.58l.051-.39c.319-2.386.328-4.18-.223-5.394-.293-.644-.743-1.125-1.355-1.431-.59-.296-1.284-.404-2.036-.404h-2.05l.056-.429c.025-.18.05-.372.076-.572.06-.483.117-1.006.117-1.438 0-1.245-.222-2.253-.92-2.941-.684-.675-1.668-.88-2.743-.956zM7 18.918c1.059.064 2.079.355 3.118.652l.568.16c1.406.39 3.006.77 5.142.77 2.277 0 3.004-.274 3.39-.781.216-.283.388-.718.54-1.448.136-.65.242-1.45.379-2.477l.05-.384c.32-2.4.253-3.795-.102-4.575-.16-.352-.375-.568-.66-.711-.305-.153-.74-.245-1.365-.245h-2.37c-.681 0-1.293-.57-1.211 1.328.026-.243.065-.537.105-.834l.07-.527c.06-.482.105-.921.105-1.25 0-1.125-.213-1.617-.473-1.873-.275-.27-.774-.455-1.795-.528-.351-.024-.698.274-.698.71v1.053c0 3.55-2.488 5.063-3.68 5.577-.372.16-.754.232-1.113.26v7.78zM3.75 20.5a.25.25 0 01-.25-.25V9.75a.25.25 0 01.25-.25h1.5a.25.25 0 01.25.25v10.5a.25.25 0 01-.25.25h-1.5z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => copyToClipboard(message.content)}
+                  className="action-button"
+                  title="Copy text"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={isDarkMode ? "#e5e7eb" : "#374151"}
+                    strokeWidth="2"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {loading && (
+          <div className="thinking-message">
+            <div className="thinking-dots">
+              <span className="thinking-dot"></span>
+              <span className="thinking-dot"></span>
+              <span className="thinking-dot"></span>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} className="messages-end" />
+      </div>
+
+      <div className="input-area">
+        <div className="input-container">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Message..."
+            className="message-input"
+            rows="1"
+            onKeyDown={handleKeyPress}
+          />
+          <button
+            onClick={sendMessage}
+            className={`send-button ${
+              !input.trim() || loading ? "disabled" : ""
+            }`}
+            disabled={!input.trim() || loading}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22,2 15,22 11,13 2,9 22,2" />
+            </svg>
+          </button>
         </div>
-      </main>
+      </div>
+
+      <footer className="footer-left">
+        <p className="footer-text">
+          &copy; {new Date().getFullYear()} Made with{" "}
+          <span
+            className="heart"
+            style={{ color: isDarkMode ? "#f87171" : "#dc2626" }}
+          >
+            ❤
+          </span>
+        </p>
+      </footer>
+      <footer className="footer-right">
+        <div className="footer-text">
+          Current Accuracy: {(accuracy.overallScore * 100).toFixed(1)}%
+        </div>
+      </footer>
     </div>
   );
 };

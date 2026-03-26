@@ -2,6 +2,7 @@
 const Review = require("../models/Review");
 const Accuracy = require("../models/Accuracy");
 
+console.log("Accuracy service loaded.");
 async function recomputeAccuracy() {
   // 1. Fetch all reviews (or within a window: e.g. last 30 days)
   const reviews = await Review.find();
@@ -20,7 +21,7 @@ async function recomputeAccuracy() {
   });
   const count = reviews.length;
   const breakdown = Object.fromEntries(
-    Object.entries(sum).map(([k, total]) => [k, +(total / count).toFixed(1)])
+    Object.entries(sum).map(([k, total]) => [k, +(total / count).toFixed(1)]),
   );
 
   // 3. Compute overall score as simple mean of the five
@@ -33,7 +34,7 @@ async function recomputeAccuracy() {
   await Accuracy.findOneAndUpdate(
     { date: today },
     { overallScore, breakdown, date: today },
-    { upsert: true }
+    { upsert: true },
   );
 }
 

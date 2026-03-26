@@ -105,7 +105,7 @@ async function sendMessage(req, res) {
     const systemPrompt = buildSystemPrompt(
       auraDoc.personality,
       nameToUse,
-      date
+      date,
     );
 
     // 3. Prepare Messages for AI
@@ -117,7 +117,7 @@ async function sendMessage(req, res) {
         ...history.slice(-6).map((m) => ({
           role: m.role,
           content: m.content,
-        }))
+        })),
       );
     }
 
@@ -125,7 +125,7 @@ async function sendMessage(req, res) {
     apiMessages.push({ role: "user", content: userMessage });
 
     // 4. Call AI
-
+    console.log(`💬 [Chat] Sending message for user ${userId}`);
     const aiReply = await callAiApi(apiMessages, apiKey);
 
     // 5. Respond

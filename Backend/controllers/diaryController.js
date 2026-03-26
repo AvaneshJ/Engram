@@ -15,6 +15,8 @@ const FALLBACK_PERSONALITY = {
 };
 
 const triggerAuraUpdate = (userId) => {
+  console.log(`🔄 [Aura] Triggering update for User: ${userId}`);
+
   return new Promise(async (resolve, reject) => {
     try {
       const diaries = await Diary.find({ userId }).sort({ createdAt: 1 });
@@ -31,8 +33,9 @@ const triggerAuraUpdate = (userId) => {
       // CORRECTED: Pointing to .js file and using Node.js execution
       const extractorPath = path.join(
         __dirname,
-        "../TextExtraction/Extractor.js"
+        "../TextExtraction/Extractor.js",
       );
+      console.log(`🚀 [Aura] Spawning Node Extractor: ${extractorPath}`);
 
       // Use fork() for Node.js scripts
       const extractorProcess = fork(extractorPath, [], {
@@ -46,6 +49,7 @@ const triggerAuraUpdate = (userId) => {
 
       extractorProcess.on("message", (message) => {
         if (message.result) {
+          console.log("✨ [Aura] AI Extraction Successful.");
           resultData = message.result;
         } else if (message.error) {
           console.error("❌ [Aura] Extractor reported error:", message.error);
@@ -57,7 +61,7 @@ const triggerAuraUpdate = (userId) => {
 
         if (code !== 0 || !finalPersonality) {
           console.error(
-            `⚠️ [Aura] Extractor failed (Code ${code}). USING FALLBACK.`
+            `⚠️ [Aura] Extractor failed (Code ${code}). USING FALLBACK.`,
           );
           finalPersonality = FALLBACK_PERSONALITY;
         }
@@ -66,9 +70,9 @@ const triggerAuraUpdate = (userId) => {
           const auraDoc = await Aura.findOneAndUpdate(
             { userId },
             { personality: finalPersonality },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
+            { upsert: true, new: true, setDefaultsOnInsert: true },
           );
-
+          console.log(`✅ [Aura] Database updated successfully!`);
           resolve(auraDoc);
         } catch (err) {
           console.error("❌ [Aura] Database save failed:", err);
@@ -93,6 +97,7 @@ const createDiaryEntry = async (req, res) => {
   try {
     const newEntry = new Diary({ userId, title, content });
     const savedEntry = await newEntry.save();
+    console.log(`📔 [Diary] Entry saved: "${title}"`);
 
     triggerAuraUpdate(userId);
 

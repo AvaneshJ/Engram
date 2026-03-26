@@ -6,7 +6,7 @@ const authenticateUser = require("../middleware/authmiddleware");
 const { recomputeAccuracy } = require("../controllers/accuracyservice");
 
 // POST /api/reviews
-
+console.log("Review route loaded.");
 router.post("/", authenticateUser, async (req, res) => {
   const { ratings, thoughtsFeedback, comments } = req.body;
   const review = new Review({

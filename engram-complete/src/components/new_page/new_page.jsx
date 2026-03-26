@@ -85,19 +85,39 @@ class Pixel {
 
 const PixelCanvasDOM = ({ gap, speed, colors, noFocus }) => {
     const containerRef = useRef(null);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const [isVisible, setIsVisible] = React.useState(false);
 
     useEffect(() => {
         if (!containerRef.current) return;
+        
+        const observer = new IntersectionObserver(
+            ([entry]) => setIsVisible(entry.isIntersecting),
+            { threshold: 0.1 }
+        );
+        
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        if (!containerRef.current || !isVisible) return;
+        
         const pixelCanvas = document.createElement('pixel-canvas');
-        if (gap) pixelCanvas.dataset.gap = gap;
-        if (speed) pixelCanvas.dataset.speed = speed;
+        // Disable animation on mobile for performance
+        if (isMobile || !isVisible) {
+            pixelCanvas.dataset.speed = '0';
+        } else {
+            if (gap) pixelCanvas.dataset.gap = gap;
+            if (speed) pixelCanvas.dataset.speed = speed;
+        }
         if (colors) pixelCanvas.dataset.colors = colors;
         if (noFocus) pixelCanvas.dataset.noFocus = '';
         containerRef.current.innerHTML = '';
         containerRef.current.appendChild(pixelCanvas);
-    }, [gap, speed, colors, noFocus]);
+    }, [gap, speed, colors, noFocus, isMobile, isVisible]);
 
-    return <div ref={containerRef} style={{ width: '100%', height: '300%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}></div>;
+    return <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}></div>;
 };
 
 if (typeof window !== 'undefined') {
@@ -122,8 +142,8 @@ if (typeof window !== 'undefined') {
             }
 
             get gap() {
-                const value = this.dataset.gap || 5;
-                const min = 4;
+                const value = this.dataset.gap || 12; // Increased from 5 for performance
+                const min = 6; // Increased minimum
                 const max = 50;
                 if (Number(value) <= min) {
                     return min;
@@ -135,10 +155,10 @@ if (typeof window !== 'undefined') {
             }
 
             get speed() {
-                const value = this.dataset.speed || 35;
+                const value = this.dataset.speed || 20; // Reduced from 35
                 const min = 0;
                 const max = 100;
-                const throttle = 0.001;
+                const throttle = 0.0008; // Reduced throttle
                 if (Number(value) <= min || this.reducedMotion) {
                     return min;
                 } else if (Number(value) >= max) {
@@ -160,12 +180,13 @@ if (typeof window !== 'undefined') {
                 this.shadowRoot.adoptedStyleSheets = [sheet];
                 this.shadowRoot.append(canvas);
                 this.canvas = this.shadowRoot.querySelector("canvas");
-                this.ctx = this.canvas.getContext("2d");
-                this.timeInterval = 1000 / 60;
+                this.ctx = this.canvas.getContext("2d", { willReadFrequently: false });
+                this.timeInterval = 1000 / 30; // Reduced from 60fps to 30fps
                 this.timePrevious = performance.now();
                 this.reducedMotion = window.matchMedia(
                     "(prefers-reduced-motion: reduce)"
                 ).matches;
+                this._animationActive = false;
                 setTimeout(() => this.init(), 10);
                 this.resizeObserver = new ResizeObserver(() => {
                     this.init();
@@ -264,26 +285,39 @@ if (typeof window !== 'undefined') {
             }
 
             animate(fnName) {
-                this.animation = requestAnimationFrame(() => this.animate(fnName));
                 const timeNow = performance.now();
                 const timePassed = timeNow - this.timePrevious;
-                if (timePassed < this.timeInterval) return;
+                
+                if (timePassed < this.timeInterval) {
+                    this.animation = requestAnimationFrame(() => this.animate(fnName));
+                    return;
+                }
+                
                 this.timePrevious = timeNow - (timePassed % this.timeInterval);
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
                 if (!this.pixels || this.pixels.length === 0) {
                     this.createPixels();
                     return;
                 }
+                
                 let allIdle = true;
-                for (let i = 0; i < this.pixels.length; i++) {
+                const pixelCount = this.pixels.length;
+                
+                for (let i = 0; i < pixelCount; i++) {
                     this.pixels[i][fnName]();
                     if (!this.pixels[i].isIdle) {
                         allIdle = false;
                     }
                 }
+                
                 if (allIdle && fnName === "disappear") {
                     cancelAnimationFrame(this.animation);
+                    this._animationActive = false;
+                    return;
                 }
+                
+                this.animation = requestAnimationFrame(() => this.animate(fnName));
             }
         }
 
@@ -302,8 +336,8 @@ const NewPage = () => {
                 <Link to="/chat" style={{ textDecoration: 'none', color: 'inherit', position: 'relative', zIndex: 2 }}>
                     <div className="card" style={{ "--active-color": "#fef08a", position: "relative", overflow: "hidden" }}>
                         <PixelCanvasDOM
-                            gap="1"
-                            speed="1009"
+                            gap="12"
+                            speed="15"
                             colors="#fef08a, #fde047, #eab308"
                             noFocus={false}
                         />
@@ -317,8 +351,8 @@ const NewPage = () => {
                 <Link to="/diary" style={{ textDecoration: 'none', color: 'inherit', position: 'relative', zIndex: 2 }}>
                     <div className="card" style={{ "--active-color": "#672026", position: "relative", overflow: "hidden" }}>
                         <PixelCanvasDOM
-                            gap="1"
-                            speed="100"
+                            gap="12"
+                            speed="12"
                             colors="rgb(142, 0, 0),rgb(255, 15, 15), #ff0000"
                             noFocus={false}
                         />

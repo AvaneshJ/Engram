@@ -163,7 +163,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  animation: fadeIn 1s ease-out;
+  animation: fadeIn 0.6s ease-out;
   transform: translateY(-100px);
 }
 
@@ -172,7 +172,7 @@ body {
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: 1.5rem;
-  animation: slideUpFade 1s ease-out;
+  animation: slideUpFade 0.6s ease-out;
 }
 
 .subheadline {
@@ -180,7 +180,7 @@ body {
   font-size: 1.125rem;
   line-height: 1.5;
   margin-bottom: 1rem;
-  animation: slideUpFade 1s ease-out 0.2s;
+  animation: slideUpFade 0.6s ease-out 0.1s;
   opacity: 0;
   animation-fill-mode: forwards;
 }
@@ -191,7 +191,7 @@ body {
   line-height: 1.6;
   margin-bottom: 2.5rem;
   max-width: 600px;
-  animation: slideUpFade 1s ease-out 0.3s;
+  animation: slideUpFade 0.6s ease-out 0.15s;
   opacity: 0;
   animation-fill-mode: forwards;
 }
@@ -205,7 +205,7 @@ body {
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  animation: slideUpFade 1s ease-out 0.4s;
+  animation: slideUpFade 0.6s ease-out 0.2s;
   opacity: 0;
   animation-fill-mode: forwards;
   position: relative;

@@ -216,8 +216,28 @@
 .top-bar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 20px;
   flex: 1;
+}
+.diary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Perfectly spaces the icon and text */
+  background-color: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 20px; /* Pill shape makes it look sleeker */
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.diary-btn:hover {
+  background-color: var(--bg-card);
+  border-color: var(--text-muted);
 }
 
 .top-bar-right {
@@ -625,5 +645,15 @@
 
   .delete-session-btn {
     opacity: 0.6;
+  }
+}
+@media (max-width: 400px) {
+  .diary-btn {
+    padding: 6px;
+    border-radius: 8px;
+    border: none; /* Make it look like a regular icon on tiny screens */
+  }
+  .diary-btn span {
+    display: none; /* Hides the word 'Diary' to save space */
   }
 }

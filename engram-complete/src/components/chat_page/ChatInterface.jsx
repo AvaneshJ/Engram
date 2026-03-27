@@ -37,9 +37,8 @@ const ChatInterface = () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        console.warn("No token found. Redirecting to auth...");
-        setError("You are not logged in. Redirecting...");
-        setTimeout(() => navigate("/auth"), 1500);
+        console.warn("No token found. User must log in.");
+        setError("Please log in to access the chat. <a href='/auth' style='color: #007bff; cursor: pointer;'>Click here to login</a>");
         return;
       }
 
@@ -63,9 +62,8 @@ const ChatInterface = () => {
               "Personality is syncing. This usually takes a moment after your first diary entry.",
             );
           } else if (response.status === 401) {
-            setError("Session expired. Please login again.");
+            setError("Session expired. <a href='/auth' style='color: #007bff; cursor: pointer;'>Please login again</a>");
             localStorage.removeItem("token");
-            setTimeout(() => navigate("/auth"), 1500);
           } else {
             throw new Error("Failed to fetch personality");
           }

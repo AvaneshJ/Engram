@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './new_page.css';
 
 
@@ -326,8 +326,36 @@ if (typeof window !== 'undefined') {
 }
 
 const NewPage = () => {
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userName");
+        navigate("/");
+    };
+
     return (
         <div className="new-page-container">
+            <div className="logout-button-container" style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
+                <button 
+                    onClick={handleLogout}
+                    style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#ff475600',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        transition: 'background-color 0.3s ease'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#ff3838'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#ff475600'}
+                >
+                    Logout
+                </button>
+            </div>
             <div className="main">
                 <div style={{ textAlign: 'left', marginBottom: '2rem', position: 'relative', zIndex: 2 }}>
                     <h1>Engram</h1>

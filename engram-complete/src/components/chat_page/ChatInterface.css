@@ -526,6 +526,7 @@ html {
   align-items: center;
   gap: 12px;
   margin-top: 8px;
+  flex-shrink: 0;
 }
 
 .control-btn {
@@ -555,6 +556,7 @@ html {
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.2s;
+  flex-shrink: 0;
 }
 
 .send-btn:hover:not(.disabled) {

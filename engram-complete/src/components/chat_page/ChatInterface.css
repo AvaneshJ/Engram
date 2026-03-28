@@ -439,6 +439,10 @@ html {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
+.action-icon.active {
+  color: var(--accent-color);
+}
+
 /* Thinking Indicator */
 .thinking-dots {
   display: flex;

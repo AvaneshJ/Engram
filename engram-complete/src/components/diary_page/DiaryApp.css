@@ -4,7 +4,6 @@
 }
 
 html {
-  /* Support for mobile safe areas (notches, taskbars) */
   viewport-fit: cover;
 }
 
@@ -660,7 +659,6 @@ body.light-mode {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-/* Hide the page-level back button on small screens to avoid conflict with mobile controls */
 @media (max-width: 768px) {
   .page-back-button {
     display: none;

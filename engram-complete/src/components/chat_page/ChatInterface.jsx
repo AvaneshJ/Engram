@@ -18,11 +18,11 @@ const ChatInterface = () => {
   const [accuracy, setAccuracy] = useState({ overallScore: 0.85 });
   const [diaryEntries, setDiaryEntries] = useState([]);
   const [insufficientEntries, setInsufficientEntries] = useState(false);
+  const [messageRatings, setMessageRatings] = useState({});
 
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
-  // Safe environment variable access
   const getBaseUrl = () => {
     let url;
     try {
@@ -34,7 +34,6 @@ const ChatInterface = () => {
   };
   const baseUrl = getBaseUrl();
 
-  // 1. CHECK DIARY ENTRIES REQUIREMENT
   useEffect(() => {
     const checkDiaryEntries = async () => {
       try {
@@ -52,7 +51,6 @@ const ChatInterface = () => {
     checkDiaryEntries();
   }, []);
 
-  // 2. FETCH PERSONALITY
   useEffect(() => {
     const fetchUserPersonality = async () => {
       const token = localStorage.getItem("token");
@@ -107,7 +105,6 @@ const ChatInterface = () => {
     fetchUserPersonality();
   }, [baseUrl, navigate]);
 
-  // 2. FETCH CHAT HISTORY FROM MONGODB
   useEffect(() => {
     const fetchHistory = async () => {
       const token = localStorage.getItem("token");
@@ -129,7 +126,6 @@ const ChatInterface = () => {
     fetchHistory();
   }, [baseUrl]);
 
-  // Auto-scroll & Theme
   useEffect(() => {
     scrollToBottom();
   }, [messages, loading]);
@@ -138,17 +134,24 @@ const ChatInterface = () => {
     document.body.setAttribute("data-theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
+  useEffect(() => {
+    const ratings = Object.values(messageRatings);
+    if (ratings.length > 0) {
+      const correctCount = ratings.filter(r => r === 'up').length;
+      const totalRatings = ratings.length;
+      setAccuracy({ overallScore: correctCount / totalRatings });
+    }
+  }, [messageRatings]);
+
   const scrollToBottom = () => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      // Add extra scroll for mobile to account for taskbar
       if (window.innerHeight < 800) {
         window.scrollBy(0, 100);
       }
     }, 100);
   };
 
-  // SEND MESSAGE (UI Update + MongoDB Sync)
   const sendMessage = async () => {
     if (showWelcome) setShowWelcome(false);
     if (input.trim() === "" || !personality) return;
@@ -165,7 +168,6 @@ const ChatInterface = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // Get AI Response
       const chatResponse = await fetch(`${baseUrl}/api/chat/send`, {
         method: "POST",
         headers: {
@@ -186,16 +188,14 @@ const ChatInterface = () => {
       const chatData = await chatResponse.json();
       const botMessage = {
         role: "assistant",
-        content: chatData.assistantMessage,
+        content: chatData?.assistantMessage || "I'm sorry, I encountered an error processing your message.",
       };
       const updatedMessages = [...messages, userMessage, botMessage];
       setMessages(updatedMessages);
 
-      // Sync with MongoDB
       const currentTokens = updatedMessages.length * 12;
 
       if (!activeSessionId) {
-        // POST: Brand new session
         const title =
           userText.substring(0, 22) + (userText.length > 22 ? "..." : "");
         const dbResponse = await fetch(`${baseUrl}/api/sessions`, {
@@ -213,11 +213,10 @@ const ChatInterface = () => {
 
         if (dbResponse.ok) {
           const savedSession = await dbResponse.json();
-          setActiveSessionId(savedSession._id);
+          setActiveSessionId(savedSession?._id);
           setChatHistory((prev) => [savedSession, ...prev]);
         }
       } else {
-        // PUT: Update existing session
         const dbResponse = await fetch(
           `${baseUrl}/api/sessions/${activeSessionId}`,
           {
@@ -237,7 +236,7 @@ const ChatInterface = () => {
           const updatedSession = await dbResponse.json();
           setChatHistory((prev) =>
             prev.map((session) =>
-              session._id === activeSessionId ? updatedSession : session,
+              session?._id === activeSessionId ? updatedSession : session,
             ),
           );
         }
@@ -276,7 +275,13 @@ const ChatInterface = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  // SESSION MANAGEMENT
+  const handleRateMessage = (index, rating) => {
+    setMessageRatings(prev => ({
+      ...prev,
+      [index]: prev[index] === rating ? null : rating
+    }));
+  };
+
   const startNewConversation = () => {
     setMessages([]);
     setInput("");
@@ -288,8 +293,8 @@ const ChatInterface = () => {
   };
 
   const loadConversation = (sessionToLoad) => {
-    setMessages(sessionToLoad.messages || []);
-    setActiveSessionId(sessionToLoad._id);
+    setMessages(sessionToLoad?.messages || []);
+    setActiveSessionId(sessionToLoad?._id);
     setShowWelcome(false);
     setIsSidebarOpen(false);
   };
@@ -319,7 +324,6 @@ const ChatInterface = () => {
     }
   };
 
-  // UI RENDERS
   if (insufficientEntries) {
     return (
       <div className={`app-container ${isDarkMode ? "dark" : "light"}`}>
@@ -389,14 +393,12 @@ const ChatInterface = () => {
 
   return (
     <div className={`app-container ${isDarkMode ? "dark" : "light"}`} style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      {/* Mobile Sidebar Overlay */}
       <div
         className={`sidebar-overlay ${isSidebarOpen ? "visible" : ""}`}
         onClick={() => setIsSidebarOpen(false)}
         role="presentation"
       ></div>
 
-      {/* Sidebar */}
       <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
         <div className="sidebar-header">
           <h2>Conversations</h2>
@@ -538,15 +540,14 @@ const ChatInterface = () => {
         </div>
       </aside>
 
-      {/* Main Chat Area */}
       <main className="main-chat">
         <header className="top-bar">
           <div className="top-bar-left">
             <button
               className="hamburger-btn icon-btn"
-              onClick={() => setIsSidebarOpen(true)}
-              aria-label="Open menu"
-              title="Open conversation menu"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              aria-label="Toggle menu"
+              title="Toggle conversation menu"
             >
               <svg
                 width="20"
@@ -673,12 +674,16 @@ const ChatInterface = () => {
 
                   {message.role === "assistant" && (
                     <div className="message-actions">
-                      <button className="action-icon" title="Thumbs up">
+                      <button 
+                        onClick={() => handleRateMessage(index, 'up')}
+                        className={`action-icon ${messageRatings[index] === 'up' ? 'active' : ''}`} 
+                        title="Accurate response"
+                      >
                         <svg
                           width="14"
                           height="14"
                           viewBox="0 0 24 24"
-                          fill="none"
+                          fill={messageRatings[index] === 'up' ? "currentColor" : "none"}
                           stroke="currentColor"
                           strokeWidth="2"
                           strokeLinecap="round"
@@ -686,6 +691,25 @@ const ChatInterface = () => {
                         >
                           <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"></path>
                           <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                      </button>
+                      <button 
+                        onClick={() => handleRateMessage(index, 'down')}
+                        className={`action-icon ${messageRatings[index] === 'down' ? 'active' : ''}`}
+                        title="Inaccurate response"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill={messageRatings[index] === 'down' ? "currentColor" : "none"}
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"></path>
+                          <path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
                         </svg>
                       </button>
                       <button

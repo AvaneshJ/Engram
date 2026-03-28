@@ -2,7 +2,38 @@ const Aura = require("../models/Aura");
 const User = require("../models/User");
 const https = require("https");
 
-// --- Security: Detect Prompt Injection & Jailbreak Attempts ---
+const CONFIG = {
+  REQUEST_TIMEOUT: 30000, 
+  MAX_MESSAGE_LENGTH: 2000,
+  MAX_RESPONSE_SIZE: 10240, 
+  API_TIMEOUT: 30000,
+  DB_TIMEOUT: 5000,
+  RATE_LIMIT_WINDOW: 60000,
+  RATE_LIMIT_MAX: 10, 
+};
+
+const rateLimitStore = new Map();
+
+function checkRateLimit(userId) {
+  const now = Date.now();
+  const userLimit = rateLimitStore.get(userId) || { count: 0, resetTime: now + CONFIG.RATE_LIMIT_WINDOW };
+
+  if (now > userLimit.resetTime) {
+    userLimit.count = 1;
+    userLimit.resetTime = now + CONFIG.RATE_LIMIT_WINDOW;
+  } else {
+    userLimit.count++;
+  }
+
+  rateLimitStore.set(userId, userLimit);
+
+  if (userLimit.count > CONFIG.RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  return true;
+}
+
 function detectPromptInjection(message) {
   const injectionPatterns = [
     /ignore.*instruction/i,
@@ -30,16 +61,13 @@ function detectPromptInjection(message) {
   return injectionPatterns.some((pattern) => pattern.test(message));
 }
 
-// --- Security: Sanitize Input ---
 function sanitizeInput(message) {
-  // Remove excessive special characters and control characters
   return message
     .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, "")
     .trim()
-    .substring(0, 2000); // Limit message length
+    .substring(0, 2000); 
 }
 
-// --- Security: Validate Response ---
 function validateAiResponse(response, userName) {
   const suspiciousPatterns = [
     /i.*am.*an.*ai.*assistant/i,
@@ -64,13 +92,16 @@ function validateAiResponse(response, userName) {
   return true;
 }
 
-// --- Helper: Call AI API Directly ---
 function callAiApi(messages, apiKey) {
   return new Promise((resolve, reject) => {
     if (!apiKey) return reject(new Error("API Key is missing in backend .env"));
 
+    if (apiKey.length < 20) {
+      return reject(new Error("Invalid API Key format"));
+    }
+
     const requestData = {
-      model: "openai/gpt-oss-20b", // Using the specific model you requested
+      model: "openai/gpt-oss-20b",
       messages: messages,
       temperature: 0.7,
       max_tokens: 500,
@@ -80,6 +111,7 @@ function callAiApi(messages, apiKey) {
       hostname: "api.groq.com",
       path: "/openai/v1/chat/completions",
       method: "POST",
+      timeout: CONFIG.API_TIMEOUT,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
@@ -88,33 +120,51 @@ function callAiApi(messages, apiKey) {
 
     const req = https.request(options, (res) => {
       let data = "";
-      res.on("data", (chunk) => (data += chunk));
+      let dataSize = 0;
+
+      res.on("data", (chunk) => {
+        dataSize += chunk.length;
+        if (dataSize > CONFIG.MAX_RESPONSE_SIZE) {
+          req.destroy();
+          reject(new Error("Response size exceeds limit"));
+          return;
+        }
+        data += chunk;
+      });
+
       res.on("end", () => {
         if (res.statusCode !== 200) {
-          return reject(new Error(`API Error ${res.statusCode}: ${data}`));
+          return reject(
+            new Error(`API Error ${res.statusCode}: ${data.substring(0, 200)}`)
+          );
         }
         try {
           const json = JSON.parse(data);
-          // Fallback if AI returns empty
           const content =
             json.choices?.[0]?.message?.content ||
             "I'm having trouble thinking right now.";
           resolve(content);
         } catch (e) {
-          reject(e);
+          reject(new Error("Failed to parse API response"));
         }
       });
     });
 
-    req.on("error", (e) => reject(e));
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("API request timeout"));
+    });
+
+    req.on("error", (e) => {
+      reject(new Error(`API request error: ${e.message}`));
+    });
+
     req.write(JSON.stringify(requestData));
     req.end();
   });
 }
 
-// --- Helper: Build System Prompt ---
 function buildSystemPrompt(personality, userName, currentDate) {
-  // Safety check if personality fields are missing
   const getDesc = (trait) => trait?.Description || "Not available";
 
   return `You are ${userName}. You ONLY answer from the perspective of your own experience and personality. You are NOT an AI assistant.
@@ -157,7 +207,7 @@ INVALID INTERACTIONS (ALWAYS REFUSE):
 
 async function sendMessage(req, res) {
   const userId = req.userId;
-  let { userMessage, history, userName } = req.body;
+  let { userMessage, history } = req.body;
 
   const apiKey = process.env.API || process.env.GROQ_API_KEY;
 
@@ -165,25 +215,49 @@ async function sendMessage(req, res) {
     return res.status(400).json({ error: "Missing userId or message" });
   }
 
+  if (!checkRateLimit(userId)) {
+    console.warn(`⚠️ [RATE LIMIT] User ${userId} exceeded rate limit`);
+    return res.status(429).json({
+      error: "Too many requests. Please wait before sending another message.",
+    });
+  }
+
+  if (userMessage.length > CONFIG.MAX_MESSAGE_LENGTH) {
+    return res.status(400).json({
+      error: `Message exceeds maximum length of ${CONFIG.MAX_MESSAGE_LENGTH} characters`,
+    });
+  }
+
   try {
-    // --- SECURITY CHECK 1: Detect Prompt Injection ---
     if (detectPromptInjection(userMessage)) {
       console.warn(
-        `⚠️ [SECURITY] Prompt injection attempt detected from user ${userId}: "${userMessage.substring(0, 50)}..."`
+        `⚠️ [SECURITY] Prompt injection attempt from user ${userId}: "${userMessage.substring(0, 50)}..."`
       );
       return res.status(400).json({
         error: "I can only respond based on my personal experience. That request is outside my scope.",
       });
     }
 
-    // --- SECURITY CHECK 2: Sanitize Input ---
     userMessage = sanitizeInput(userMessage);
 
-    // 1. Load Personality & User
-    const [auraDoc, userDoc] = await Promise.all([
-      Aura.findOne({ userId }),
-      User.findById(userId),
-    ]);
+    let auraDoc, userDoc;
+    try {
+      const dbPromise = Promise.all([
+        Aura.findOne({ userId }).maxTimeMS(CONFIG.DB_TIMEOUT),
+        User.findById(userId).maxTimeMS(CONFIG.DB_TIMEOUT),
+      ]);
+
+      const dbTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Database query timeout")), CONFIG.DB_TIMEOUT)
+      );
+
+      [auraDoc, userDoc] = await Promise.race([dbPromise, dbTimeout]);
+    } catch (dbErr) {
+      console.error(`❌ [Database] Error for user ${userId}:`, dbErr.message);
+      return res.status(503).json({
+        error: "Service temporarily unavailable. Please try again.",
+      });
+    }
 
     if (!auraDoc || !auraDoc.personality) {
       return res.status(404).json({
@@ -191,15 +265,12 @@ async function sendMessage(req, res) {
       });
     }
 
-    // 2. Construct Context
-    const nameToUse = userDoc.name || "User";
+    const nameToUse = userDoc?.name || "User";
     const date = new Date().toLocaleDateString();
     const systemPrompt = buildSystemPrompt(auraDoc.personality, nameToUse, date);
 
-    // 3. Prepare Messages for AI with Isolation
     const apiMessages = [{ role: "system", content: systemPrompt }];
 
-    // Add limited history (last 4 messages only) to prevent context bloat
     if (history && Array.isArray(history)) {
       apiMessages.push(
         ...history.slice(-4).map((m) => ({
@@ -209,28 +280,31 @@ async function sendMessage(req, res) {
       );
     }
 
-    // Add current user message
     apiMessages.push({ role: "user", content: userMessage });
 
-    // 4. Call AI
-    console.log(`💬 [Chat] User ${userId} message: "${userMessage.substring(0, 50)}..."`);
-    let aiReply = await callAiApi(apiMessages, apiKey);
+    console.log(`💬 [Chat] User ${userId}: "${userMessage.substring(0, 40)}..."`);
+    let aiReply;
+    try {
+      aiReply = await callAiApi(apiMessages, apiKey);
+    } catch (apiErr) {
+      console.error(`❌ [API] Error for user ${userId}:`, apiErr.message);
+      return res.status(503).json({
+        error: "AI service temporarily unavailable. Please try again later.",
+      });
+    }
 
-    // --- SECURITY CHECK 3: Validate Response ---
     const isValidResponse = validateAiResponse(aiReply, nameToUse);
     if (!isValidResponse) {
       console.error(
         `❌ [SECURITY] AI broke character for user ${userId}. Response: "${aiReply.substring(0, 100)}..."`
       );
-      // Fallback to safe response
       aiReply =
         "I don't have enough personal experience to answer that. Can we talk about something else?";
     }
 
-    // 5. Respond
     return res.status(200).json({ assistantMessage: aiReply });
   } catch (err) {
-    console.error("❌ [Chat] Controller Error:", err.message);
+    console.error("❌ [Chat] Unexpected error:", err.message);
     return res.status(500).json({ error: "Failed to generate response." });
   }
 }

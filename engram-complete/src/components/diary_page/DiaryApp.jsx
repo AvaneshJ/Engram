@@ -345,7 +345,7 @@ const DiaryApp = () => {
     >
       <button
         className="page-back-button"
-        onClick={() => navigate("/chat")}
+        onClick={() => navigate("/new_page")}
         title="Go back"
         aria-label="Go back"
       >

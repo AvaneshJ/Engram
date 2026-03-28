@@ -544,6 +544,25 @@ const ChatInterface = () => {
         <header className="top-bar">
           <div className="top-bar-left">
             <button
+              className="icon-btn"
+              onClick={() => navigate("/new_page")}
+              aria-label="Go back"
+              title="Go back"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+            <button
               className="hamburger-btn icon-btn"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               aria-label="Toggle menu"

@@ -183,6 +183,7 @@ const DiaryForm = ({ onSave, selectedEntry, onBack, isDarkMode }) => {
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Enter your title here..."
         className="diary-title-input"
+        maxLength="100"
       />
 
       <textarea
@@ -190,10 +191,12 @@ const DiaryForm = ({ onSave, selectedEntry, onBack, isDarkMode }) => {
         onChange={(e) => setContent(e.target.value)}
         placeholder="Write your diary entry here..."
         className="diary-content-input"
+        maxLength="5000"
+        spellCheck="true"
         required
       />
 
-      <button type="submit" className="submit-button">
+      <button type="submit" className="submit-button" title="Submit diary entry">
         Submit Entry
       </button>
     </form>

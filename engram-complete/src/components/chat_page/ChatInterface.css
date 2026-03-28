@@ -3,6 +3,11 @@
   src: url("../assets/Dune_Rise.ttf") format("truetype");
 }
 
+html {
+  /* Support for mobile safe areas (notches, taskbars) */
+  viewport-fit: cover;
+}
+
 /* Base Theme Variables */
 :root {
   --bg-sidebar: #121212;
@@ -470,13 +475,14 @@
 /* Floating Input */
 .floating-input-wrapper {
   position: absolute;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
   padding: 0 24px;
   pointer-events: none;
+  z-index: 50;
 }
 
 .input-box {
@@ -581,20 +587,52 @@
 /* ==================================================
    MOBILE RESPONSIVENESS
    ================================================== */
+
+/* Tablet (768px and below) */
 @media (max-width: 768px) {
+  :root {
+    --text-primary: #e4e4e7;
+    font-size: 15px; /* Increase base font size for better readability */
+  }
+
+  .app-container {
+    height: 100vh;
+    width: 100vw;
+  }
+
   .sidebar {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     height: 100%;
     width: 280px;
     max-width: 85vw;
     transform: translateX(-100%);
+    z-index: 1000;
+    transition: transform 0.3s ease-out;
   }
 
   .sidebar.open {
     transform: translateX(0);
     box-shadow: 4px 0 15px rgba(0, 0, 0, 0.4);
+  }
+
+  .sidebar-header {
+    height: 56px;
+    padding: 0 12px;
+  }
+
+  .sidebar-content {
+    padding: 8px;
+  }
+
+  .history-item {
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  .sidebar-overlay {
+    display: none;
   }
 
   .sidebar-overlay.visible {
@@ -603,11 +641,15 @@
   }
 
   .hamburger-btn {
-    display: flex;
+    display: flex !important;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .mobile-close-btn {
-    display: flex;
+    display: flex !important;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .desktop-icons,
@@ -616,44 +658,232 @@
   }
 
   .top-bar {
-    padding: 0 16px;
+    padding: 0 12px;
+    height: 56px;
+    gap: 12px;
+  }
+
+  .top-bar-left,
+  .top-bar-right {
+    gap: 8px;
+  }
+
+  .icon-btn {
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .chat-messages {
-    padding: 16px 12px;
-    gap: 16px;
+    padding: 12px 8px;
+    gap: 12px;
   }
 
   .message-card {
     max-width: 95%;
-    padding: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+  }
+
+  .message-content {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .message-header {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+  }
+
+  .message-actions {
+    top: 8px;
+    right: 8px;
   }
 
   .floating-input-wrapper {
-    padding: 0 12px;
-    bottom: 12px;
+    padding: 0 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   }
 
   .input-box {
     padding: 10px 12px;
-    border-radius: 16px;
+    border-radius: 20px;
+    max-width: 100%;
+  }
+
+  .input-box textarea {
+    font-size: 0.95rem;
+    max-height: 120px;
+    min-height: 36px;
+  }
+
+  .send-btn {
+    min-width: 36px;
+    min-height: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .input-controls {
+    gap: 8px;
+  }
+
+  .control-btn {
+    min-width: 36px;
+    min-height: 36px;
   }
 
   .messages-end {
-    height: 130px;
+    height: calc(120px + env(safe-area-inset-bottom, 0px));
   }
 
   .delete-session-btn {
     opacity: 0.6;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .new-chat-btn {
+    min-height: 44px;
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  .empty-state {
+    height: 60vh;
+  }
+
+  .welcome-title {
+    font-size: 1.6rem;
+  }
+
+  .welcome-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .trait-chips {
+    gap: 8px;
+  }
+
+  .chip {
+    font-size: 0.7rem;
+    padding: 5px 10px;
   }
 }
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+  :root {
+    font-size: 14px;
+  }
+
+  .sidebar {
+    width: 75vw;
+    max-width: 280px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 0.85rem;
+  }
+
+  .top-bar {
+    padding: 0 8px;
+    height: 52px;
+  }
+
+  .chat-messages {
+    padding: 8px 4px;
+    max-width: 100%;
+  }
+
+  .message-card {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+
+  .message-content {
+    font-size: 0.85rem;
+  }
+
+  .floating-input-wrapper {
+    padding: 0 4px;
+    bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .input-box {
+    padding: 8px 10px;
+    border-radius: 16px;
+  }
+
+  .input-box textarea {
+    font-size: 0.9rem;
+    padding: 6px 0;
+  }
+
+  .send-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .messages-end {
+    height: calc(100px + env(safe-area-inset-bottom, 0px));
+  }
+  
+  /* Ensure input box stays above taskbar */
+  .input-box {
+    max-height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Extra Small Mobile (320px and below) */
+@media (max-width: 320px) {
+  .welcome-title {
+    font-size: 1.3rem;
+  }
+
+  .message-card {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+
+  .input-box {
+    padding: 6px 8px;
+  }
+
+  .input-box textarea {
+    font-size: 0.85rem;
+  }
+}
+
+/* Diary Button Mobile Optimization */
+@media (max-width: 480px) {
+  .diary-btn {
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    min-height: 40px;
+  }
+
+  .diary-btn span {
+    display: inline;
+  }
+}
+
 @media (max-width: 400px) {
   .diary-btn {
-    padding: 6px;
-    border-radius: 8px;
-    border: none; /* Make it look like a regular icon on tiny screens */
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
   }
+
   .diary-btn span {
-    display: none; /* Hides the word 'Diary' to save space */
+    display: none;
+  }
+
+  .diary-btn {
+    min-width: 40px;
+    min-height: 40px;
   }
 }

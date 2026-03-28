@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getDiaryEntries } from "../../api/index";
 import "./ChatInterface.css";
 
 const ChatInterface = () => {
@@ -15,6 +16,8 @@ const ChatInterface = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [accuracy, setAccuracy] = useState({ overallScore: 0.85 });
+  const [diaryEntries, setDiaryEntries] = useState([]);
+  const [insufficientEntries, setInsufficientEntries] = useState(false);
 
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
@@ -31,7 +34,25 @@ const ChatInterface = () => {
   };
   const baseUrl = getBaseUrl();
 
-  // 1. FETCH PERSONALITY
+  // 1. CHECK DIARY ENTRIES REQUIREMENT
+  useEffect(() => {
+    const checkDiaryEntries = async () => {
+      try {
+        const entries = await getDiaryEntries();
+        setDiaryEntries(entries);
+        if (entries.length < 5) {
+          setInsufficientEntries(true);
+        }
+      } catch (err) {
+        console.error("Failed to check diary entries:", err);
+        setInsufficientEntries(true);
+      }
+    };
+
+    checkDiaryEntries();
+  }, []);
+
+  // 2. FETCH PERSONALITY
   useEffect(() => {
     const fetchUserPersonality = async () => {
       const token = localStorage.getItem("token");
@@ -120,6 +141,10 @@ const ChatInterface = () => {
   const scrollToBottom = () => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      // Add extra scroll for mobile to account for taskbar
+      if (window.innerHeight < 800) {
+        window.scrollBy(0, 100);
+      }
     }, 100);
   };
 
@@ -295,6 +320,37 @@ const ChatInterface = () => {
   };
 
   // UI RENDERS
+  if (insufficientEntries) {
+    return (
+      <div className={`app-container ${isDarkMode ? "dark" : "light"}`}>
+        <div className="error-message">
+          <h3>Build Your Digital Twin First</h3>
+          <p>
+            To access the chat, you need at least 5 diary entries. This helps us understand your personality and create an accurate AI companion.
+          </p>
+          <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+            Current entries: {diaryEntries.length} / 5
+          </p>
+          <div style={{ display: "flex", gap: "10px", marginTop: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
+            <button
+              onClick={() => navigate("/diary")}
+              className="action-btn-primary"
+              style={{ backgroundColor: "var(--accent-color)", color: "white" }}
+            >
+              Write Diary Entries
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="action-btn-primary"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (error && !personality) {
     return (
       <div className={`app-container ${isDarkMode ? "dark" : "light"}`}>
@@ -332,11 +388,12 @@ const ChatInterface = () => {
   }
 
   return (
-    <div className={`app-container ${isDarkMode ? "dark" : "light"}`}>
+    <div className={`app-container ${isDarkMode ? "dark" : "light"}`} style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       {/* Mobile Sidebar Overlay */}
       <div
         className={`sidebar-overlay ${isSidebarOpen ? "visible" : ""}`}
         onClick={() => setIsSidebarOpen(false)}
+        role="presentation"
       ></div>
 
       {/* Sidebar */}
@@ -347,6 +404,8 @@ const ChatInterface = () => {
             <button
               className="mobile-close-btn"
               onClick={() => setIsSidebarOpen(false)}
+              aria-label="Close menu"
+              title="Close menu"
             >
               <svg
                 width="18"
@@ -355,6 +414,7 @@ const ChatInterface = () => {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
               >
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -442,6 +502,7 @@ const ChatInterface = () => {
               <button
                 className="delete-session-btn"
                 onClick={(e) => deleteConversation(e, session._id)}
+                aria-label="Delete chat"
                 title="Delete Chat"
               >
                 <svg
@@ -461,7 +522,11 @@ const ChatInterface = () => {
             </div>
           ))}
 
-          <button className="new-chat-btn" onClick={startNewConversation}>
+          <button 
+            className="new-chat-btn" 
+            onClick={startNewConversation}
+            aria-label="Start new conversation"
+          >
             <span>+ New Conversation</span>
           </button>
         </div>
@@ -480,6 +545,8 @@ const ChatInterface = () => {
             <button
               className="hamburger-btn icon-btn"
               onClick={() => setIsSidebarOpen(true)}
+              aria-label="Open menu"
+              title="Open conversation menu"
             >
               <svg
                 width="20"
@@ -488,6 +555,7 @@ const ChatInterface = () => {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
               >
                 <line x1="3" y1="12" x2="21" y2="12"></line>
                 <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -502,6 +570,7 @@ const ChatInterface = () => {
             <button
               className="diary-btn"
               onClick={() => navigate("/diary")}
+              aria-label="Go to Diary"
               title="Head to Diary"
             >
               <svg
@@ -513,6 +582,7 @@ const ChatInterface = () => {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -522,6 +592,7 @@ const ChatInterface = () => {
             <button
               className="icon-btn"
               onClick={toggleTheme}
+              aria-label="Toggle theme"
               title="Toggle Theme"
             >
               {isDarkMode ? (
@@ -692,12 +763,17 @@ const ChatInterface = () => {
               placeholder="Enter a message..."
               rows="1"
               onKeyDown={handleKeyPress}
+              spellCheck="true"
+              aria-label="Chat message input"
+              maxLength="2000"
             />
             <div className="input-controls">
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || loading}
                 className={`send-btn ${!input.trim() || loading ? "disabled" : ""}`}
+                aria-label="Send message"
+                title="Send message"
               >
                 <svg
                   width="16"
@@ -706,6 +782,7 @@ const ChatInterface = () => {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
+                  aria-hidden="true"
                 >
                   <line x1="12" y1="19" x2="12" y2="5"></line>
                   <polyline points="5 12 12 5 19 12"></polyline>

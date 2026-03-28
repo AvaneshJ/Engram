@@ -3,6 +3,11 @@
   src: url("../assets/Dune_Rise.ttf") format("truetype");
 }
 
+html {
+  /* Support for mobile safe areas (notches, taskbars) */
+  viewport-fit: cover;
+}
+
 *,
 *::before,
 *::after {
@@ -64,6 +69,7 @@ body.light-mode {
   top: 0;
   left: 0;
   transition: background-color var(--transition-speed) ease;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .diary-app-container.dark-mode {
@@ -333,7 +339,7 @@ body.light-mode {
   resize: none;
   transition: all 0.3s ease;
   font-family: "Roboto Mono", monospace;
-  margin-bottom: 70px;
+  margin-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   border: 1px solid;
   line-height: 1.6;
 }
@@ -377,7 +383,7 @@ body.light-mode {
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  bottom: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
 
 .dark-mode .submit-button {
@@ -566,7 +572,7 @@ body.light-mode {
   }
 
   .mobile-view .diary-form {
-    height: calc(100vh - 80px);
+    height: calc(100vh - 80px - env(safe-area-inset-bottom, 0px));
     padding: 15px;
     padding-top: 0;
   }
@@ -581,7 +587,7 @@ body.light-mode {
   }
 
   .mobile-view .submit-button {
-    bottom: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     right: 10px;
     padding: 10px 20px;
     font-size: 0.9rem;
@@ -597,6 +603,7 @@ body.light-mode {
   .mobile-view .diary-main-content {
     padding: 10px;
     padding-top: 70px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
 
   .mobile-view .journal-entry {
@@ -611,6 +618,7 @@ body.light-mode {
   .mobile-view .diary-content-input {
     padding: 12px;
     font-size: 0.9rem;
+    margin-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   }
 
   .mobile-view .entry-content {

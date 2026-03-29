@@ -20,6 +20,10 @@ export default function LandingPage() {
       setIsLoaded(true);
     }, 300);
 
+    // Force light mode on landing page
+    document.body.classList.add("light-mode");
+    document.body.classList.remove("dark-mode");
+
     const observerOptions = {
       root: null,
       rootMargin: "0px",

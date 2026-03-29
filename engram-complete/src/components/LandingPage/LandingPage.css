@@ -17,6 +17,7 @@ body {
   height: auto;
   overflow-x: hidden;
   overflow-y: auto;
+  color-scheme: light;
 }
 
 body {
@@ -553,6 +554,10 @@ body {
   align-items: center;
   transition: all 0.3s ease;
   color: #000;
+}
+
+body.dark-mode .faq-question {
+  color: #fff;
 }
 
 .faq-question:hover {

@@ -261,7 +261,7 @@ const DiaryApp = () => {
   }, []);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("diary-theme");
+    const savedTheme = localStorage.getItem("engram-theme");
     if (savedTheme === "light") {
       setIsDarkMode(false);
       document.body.classList.remove("dark-mode");
@@ -288,11 +288,11 @@ const DiaryApp = () => {
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
     if (isDarkMode) {
-      localStorage.setItem("diary-theme", "light");
+      localStorage.setItem("engram-theme", "light");
       document.body.classList.remove("dark-mode");
       document.body.classList.add("light-mode");
     } else {
-      localStorage.setItem("diary-theme", "dark");
+      localStorage.setItem("engram-theme", "dark");
       document.body.classList.add("dark-mode");
       document.body.classList.remove("light-mode");
     }

@@ -8,7 +8,10 @@ const ChatInterface = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [personality, setPersonality] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("engram-theme");
+    return savedTheme === "light" ? false : true;
+  });
   const [showWelcome, setShowWelcome] = useState(true);
   const [error, setError] = useState(null);
   const [chatHistory, setChatHistory] = useState([]);
@@ -273,7 +276,11 @@ const ChatInterface = () => {
     }
   };
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem("engram-theme", newTheme ? "dark" : "light");
+  };
 
   const handleRateMessage = (index, rating) => {
     setMessageRatings(prev => ({

@@ -155,7 +155,7 @@ body {
 .main-content {
   max-width: 64rem;
   margin: 0 auto;
-  padding: -0.1rem 0.1rem 4rem;
+  padding: 0 0.1rem 4rem;
   text-align: center;
   position: relative;
   z-index: 5;

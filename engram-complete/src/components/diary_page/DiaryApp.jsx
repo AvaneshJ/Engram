@@ -222,7 +222,7 @@ const DiarySidebar = ({ entries, onSelectEntry, isDarkMode }) => {
       ) : (
         entries.map((entry) => (
           <div
-            key={entry.id}
+            key={entry._id}
             className="journal-entry"
             onClick={() => onSelectEntry(entry)}
           >

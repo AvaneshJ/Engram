@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import "./LandingPage.css";
 import dotPattern from "./assets/Logo.svg";
 import diary from "./assets/Diary.jpg";
@@ -6,6 +7,7 @@ import review from "./assets/review.jpg";
 import OCEAN from "./assets/OCEAN.jpg";
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const sectionOneRef = useRef(null);
@@ -113,7 +115,7 @@ export default function LandingPage() {
           </div>
           <div
             className="nav-item"
-            onClick={() => (window.location.href = "/auth")}
+            onClick={() => navigate("/auth")}
           >
             Signup
           </div>
@@ -132,7 +134,7 @@ export default function LandingPage() {
         </p>
         <button
           className="cta-button"
-          onClick={() => (window.location.href = "/auth")}
+          onClick={() => navigate("/auth")}
         >
           Free – Start Now
         </button>
@@ -241,7 +243,7 @@ export default function LandingPage() {
           </div>
           <button
             className="footer-cta"
-            onClick={() => (window.location.href = "/auth")}
+            onClick={() => navigate("/auth")}
           >
             Free – Start Now
           </button>
